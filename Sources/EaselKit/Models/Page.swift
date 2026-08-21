@@ -8,6 +8,7 @@ public struct Page: Codable, Sendable, Equatable, CanvasRow {
     public let title: String?
     public let body: String?
     public let published: Bool?
+    public let publishAt: Date?
     public let frontPage: Bool?
     public let editingRoles: String?
     public let lockedForUser: Bool?
@@ -20,6 +21,7 @@ public struct Page: Codable, Sendable, Equatable, CanvasRow {
         case title
         case body
         case published
+        case publishAt = "publish_at"
         case frontPage = "front_page"
         case editingRoles = "editing_roles"
         case lockedForUser = "locked_for_user"
@@ -38,11 +40,23 @@ public struct PageUpdate: Encodable, Sendable, Equatable {
     public let title: String?
     public let body: String?
     public let published: Bool?
+    /// ISO 8601 with a time zone; schedules a future publication date. Only
+    /// takes effect when the Canvas account has the Scheduled Page Publication
+    /// feature enabled. (Pages have no unlock/lock dates in the Canvas API.)
+    public let publishAt: String?
 
-    public init(title: String? = nil, body: String? = nil, published: Bool? = nil) {
+    public init(title: String? = nil, body: String? = nil, published: Bool? = nil, publishAt: String? = nil) {
         self.title = title
         self.body = body
         self.published = published
+        self.publishAt = publishAt
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case body
+        case published
+        case publishAt = "publish_at"
     }
 }
 

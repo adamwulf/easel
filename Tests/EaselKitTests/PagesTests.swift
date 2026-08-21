@@ -65,5 +65,24 @@ final class PagesTests: XCTestCase {
         XCTAssertEqual(wikiPage["title"] as? String, "Syllabus (Fall 2026)")
         XCTAssertEqual(wikiPage["body"] as? String, "<h2>Welcome</h2><p>Updated for fall.</p>")
         XCTAssertNil(wikiPage["published"], "nil fields must be omitted so Canvas leaves them untouched")
+        XCTAssertNil(wikiPage["publish_at"])
+    }
+
+    func testUpdatePageSendsPublishAt() async throws {
+        let transport = StubTransport()
+        await transport.on("/courses/101/pages/week-1-materials", method: "PUT", json: Fixtures.pageUpdated)
+        let client = CanvasClient.stubbed(transport)
+
+        let update = PageUpdate(publishAt: "2026-08-24T08:00:00-05:00")
+        _ = try await client.updatePage(courseID: 101, urlOrID: "week-1-materials", update: update)
+
+        let recorded = await transport.recorded
+        let request = try XCTUnwrap(recorded.first)
+        let bodyData = try XCTUnwrap(request.body)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
+        let wikiPage = try XCTUnwrap(object["wiki_page"] as? [String: Any])
+        XCTAssertEqual(wikiPage["publish_at"] as? String, "2026-08-24T08:00:00-05:00")
+        XCTAssertNil(wikiPage["title"])
+        XCTAssertNil(wikiPage["body"])
     }
 }

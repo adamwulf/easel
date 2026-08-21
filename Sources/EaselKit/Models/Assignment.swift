@@ -7,6 +7,8 @@ public struct Assignment: Codable, Sendable, Equatable, CanvasRow {
     public let name: String?
     public let description: String?
     public let dueAt: Date?
+    public let unlockAt: Date?
+    public let lockAt: Date?
     public let pointsPossible: Double?
     public let published: Bool?
     public let htmlURL: String?
@@ -22,6 +24,8 @@ public struct Assignment: Codable, Sendable, Equatable, CanvasRow {
         case name
         case description
         case dueAt = "due_at"
+        case unlockAt = "unlock_at"
+        case lockAt = "lock_at"
         case pointsPossible = "points_possible"
         case published
         case htmlURL = "html_url"
@@ -62,21 +66,29 @@ public struct AssignmentUpdate: Encodable, Sendable, Equatable {
     public let description: String?
     public let published: Bool?
     public let pointsPossible: Double?
-    /// ISO 8601, passed through verbatim.
+    /// ISO 8601 with a time zone, passed through verbatim.
     public let dueAt: String?
+    /// ISO 8601 with a time zone; the date the assignment becomes available.
+    public let unlockAt: String?
+    /// ISO 8601 with a time zone; the date the assignment locks.
+    public let lockAt: String?
 
     public init(
         name: String? = nil,
         description: String? = nil,
         published: Bool? = nil,
         pointsPossible: Double? = nil,
-        dueAt: String? = nil
+        dueAt: String? = nil,
+        unlockAt: String? = nil,
+        lockAt: String? = nil
     ) {
         self.name = name
         self.description = description
         self.published = published
         self.pointsPossible = pointsPossible
         self.dueAt = dueAt
+        self.unlockAt = unlockAt
+        self.lockAt = lockAt
     }
 
     enum CodingKeys: String, CodingKey {
@@ -85,6 +97,8 @@ public struct AssignmentUpdate: Encodable, Sendable, Equatable {
         case published
         case pointsPossible = "points_possible"
         case dueAt = "due_at"
+        case unlockAt = "unlock_at"
+        case lockAt = "lock_at"
     }
 }
 

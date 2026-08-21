@@ -126,6 +126,8 @@ enum Fixtures {
       "name": "Self Portrait",
       "description": "<p>Draw yourself in charcoal.</p>",
       "due_at": "2026-09-05T04:59:59Z",
+      "unlock_at": "2026-08-24T06:00:00Z",
+      "lock_at": "2026-09-12T04:59:59Z",
       "points_possible": 100.0,
       "published": true,
       "html_url": "https://example.instructure.com/courses/101/assignments/501",

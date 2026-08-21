@@ -30,7 +30,9 @@ public enum CanvasJSON {
         return encoder
     }
 
-    static func parseISO8601(_ string: String) -> Date? {
+    /// Parses a full ISO 8601 date-time (offset or `Z` required). Also the
+    /// check the CLI uses to validate date flags before sending them.
+    public static func parseISO8601(_ string: String) -> Date? {
         // ISO8601DateFormatter is thread-safe, but instances are created locally
         // so no shared mutable state crosses concurrency domains.
         let plain = ISO8601DateFormatter()

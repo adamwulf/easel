@@ -29,6 +29,8 @@ final class AssignmentsTests: XCTestCase {
         let assignment = try await client.assignment(courseID: 101, id: 501)
 
         XCTAssertEqual(assignment.description, "<p>Draw yourself in charcoal.</p>")
+        XCTAssertNotNil(assignment.unlockAt)
+        XCTAssertNotNil(assignment.lockAt)
         let criterion = try XCTUnwrap(assignment.rubric?.first)
         XCTAssertEqual(criterion.id, "_10")
         XCTAssertEqual(criterion.points, 60.0)
@@ -58,5 +60,30 @@ final class AssignmentsTests: XCTestCase {
         XCTAssertEqual(payload["points_possible"] as? Double, 120.0)
         XCTAssertNil(payload["description"])
         XCTAssertNil(payload["due_at"])
+        XCTAssertNil(payload["unlock_at"])
+        XCTAssertNil(payload["lock_at"])
+    }
+
+    func testUpdateAssignmentSendsDueAndAvailabilityDates() async throws {
+        let transport = StubTransport()
+        await transport.on("/courses/101/assignments/501", method: "PUT", json: Fixtures.assignmentUpdated)
+        let client = CanvasClient.stubbed(transport)
+
+        let update = AssignmentUpdate(
+            dueAt: "2026-09-12T23:59:00-05:00",
+            unlockAt: "2026-08-24T00:00:00-05:00",
+            lockAt: "2026-09-13T23:59:00-05:00"
+        )
+        _ = try await client.updateAssignment(courseID: 101, id: 501, update: update)
+
+        let recorded = await transport.recorded
+        let request = try XCTUnwrap(recorded.first)
+        let bodyData = try XCTUnwrap(request.body)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
+        let payload = try XCTUnwrap(object["assignment"] as? [String: Any])
+        XCTAssertEqual(payload["due_at"] as? String, "2026-09-12T23:59:00-05:00")
+        XCTAssertEqual(payload["unlock_at"] as? String, "2026-08-24T00:00:00-05:00")
+        XCTAssertEqual(payload["lock_at"] as? String, "2026-09-13T23:59:00-05:00")
+        XCTAssertNil(payload["name"])
     }
 }

@@ -59,8 +59,11 @@ easel page 101 page_id:11                 # look up by id instead of slug
 easel update-page 101 course-syllabus --title "Syllabus (Fall 2026)"
 easel update-page 101 course-syllabus --body-file syllabus.html
 cat syllabus.html | easel update-page 101 course-syllabus --body-file -
-easel update-page 101 week-1-materials --published true
+easel update-page 101 week-1-materials --published true       # publish / unpublish
+easel update-page 101 week-1-materials --publish-at "2026-08-24T08:00:00-05:00"
 ```
+
+`--publish-at` schedules a future publication date; it only takes effect when the Canvas account has the Scheduled Page Publication feature enabled. Pages have no unlock/lock availability dates in the Canvas API — those exist on assignments.
 
 ### Assignments
 
@@ -72,8 +75,24 @@ easel assignment 101 501                  # one assignment, with description + r
 easel update-assignment 101 501 --name "Self Portrait (Revised)"
 easel update-assignment 101 501 --description-file brief.html
 easel update-assignment 101 501 --points 120 --due-at "2026-09-12T23:59:00-05:00"
-easel update-assignment 101 501 --published true
+easel update-assignment 101 501 --published true              # publish / unpublish
+
+# availability window: unlocks Aug 24, locks Sep 13
+easel update-assignment 101 501 \
+  --unlock-at "2026-08-24T00:00:00-05:00" \
+  --lock-at "2026-09-13T23:59:00-05:00"
 ```
+
+### Dates and time zones
+
+Every date flag (`--due-at`, `--unlock-at`, `--lock-at`, `--publish-at`) takes a full ISO 8601 date-time **with an explicit time zone** — either an offset or `Z`:
+
+```
+2026-09-05T23:59:00-05:00     11:59 PM US Central (CDT)
+2026-09-06T04:59:00Z          the same moment, in UTC
+```
+
+easel rejects values without a time zone before sending anything, because Canvas silently treats zone-less dates as UTC — which shifts the wall-clock time by hours. Canvas stores dates in UTC and returns them with a `Z` suffix, so a date you write with `-05:00` reads back as the equivalent `Z` time.
 
 ### People
 

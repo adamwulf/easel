@@ -63,6 +63,34 @@ final class ParsingTests: XCTestCase {
         XCTAssertEqual(command.dueAt, "2026-09-05T23:59:00-05:00")
     }
 
+    func testUpdateAssignmentParsesAvailabilityDates() throws {
+        let command = try UpdateAssignmentCommand.parse(
+            ["101", "501", "--unlock-at", "2026-08-24T00:00:00-05:00", "--lock-at", "2026-09-13T23:59:00Z"]
+        )
+        XCTAssertEqual(command.unlockAt, "2026-08-24T00:00:00-05:00")
+        XCTAssertEqual(command.lockAt, "2026-09-13T23:59:00Z")
+    }
+
+    func testUpdateAssignmentUnlockAtAloneCountsAsAChange() {
+        XCTAssertNoThrow(try UpdateAssignmentCommand.parse(["101", "501", "--unlock-at", "2026-08-24T00:00:00Z"]))
+    }
+
+    func testUpdateAssignmentRejectsDateWithoutTimeZone() {
+        XCTAssertThrowsError(try UpdateAssignmentCommand.parse(["101", "501", "--due-at", "2026-09-05T23:59:00"]))
+    }
+
+    func testUpdateAssignmentRejectsNonDate() {
+        XCTAssertThrowsError(try UpdateAssignmentCommand.parse(["101", "501", "--lock-at", "next friday"]))
+    }
+
+    func testUpdatePagePublishAtAloneCountsAsAChange() {
+        XCTAssertNoThrow(try UpdatePageCommand.parse(["101", "home", "--publish-at", "2026-08-24T08:00:00-05:00"]))
+    }
+
+    func testUpdatePageRejectsDateWithoutTimeZone() {
+        XCTAssertThrowsError(try UpdatePageCommand.parse(["101", "home", "--publish-at", "2026-08-24T08:00:00"]))
+    }
+
     func testUsersParsesEnrollmentType() throws {
         let command = try UsersCommand.parse(["101", "--enrollment-type", "student"])
         XCTAssertEqual(command.enrollmentType, "student")

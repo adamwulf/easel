@@ -72,4 +72,5 @@ Tests/
 - Config resolution order: explicit flag → process environment → nearest `.env` walking up parent directories (closest wins). Keys: `CANVAS_API_KEY`, `CANVAS_HOST`.
 - Every command takes `--format json|jsonl|id` (default `json`) via `GlobalOptions` and prints via `Easel.emit`.
 - Commands that change things validate that at least one change flag was given (`validate()`), and `--x` / `--x-file` pairs are mutually exclusive; `-` means stdin.
+- Date flags (`--due-at`, `--unlock-at`, `--lock-at`, `--publish-at`) require full ISO 8601 with an explicit time zone; `ISODateFlag.validate` rejects zone-less values in `validate()` because Canvas silently treats them as UTC. Dates in write bodies stay `String` (passed through verbatim), never `Date`.
 - Commit style: plain descriptive messages; don't squash history.

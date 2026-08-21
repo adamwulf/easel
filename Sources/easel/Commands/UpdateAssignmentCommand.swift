@@ -28,8 +28,14 @@ struct UpdateAssignmentCommand: AsyncParsableCommand {
     @Option(help: "New points possible.")
     var points: Double?
 
-    @Option(help: "New due date, ISO 8601, like \"2026-09-05T23:59:00-05:00\".")
+    @Option(help: "New due date, ISO 8601 with a time zone, like \"2026-09-05T23:59:00-05:00\".")
     var dueAt: String?
+
+    @Option(help: "Date the assignment becomes available, ISO 8601 with a time zone.")
+    var unlockAt: String?
+
+    @Option(help: "Date the assignment locks, ISO 8601 with a time zone.")
+    var lockAt: String?
 
     @OptionGroup var options: GlobalOptions
 
@@ -38,12 +44,16 @@ struct UpdateAssignmentCommand: AsyncParsableCommand {
             throw ValidationError("Use only one of --description or --description-file.")
         }
         if name == nil && description == nil && descriptionFile == nil
-            && published == nil && points == nil && dueAt == nil {
+            && published == nil && points == nil
+            && dueAt == nil && unlockAt == nil && lockAt == nil {
             throw ValidationError(
                 "Provide at least one change: --name, --description, --description-file, "
-                    + "--published, --points, or --due-at."
+                    + "--published, --points, --due-at, --unlock-at, or --lock-at."
             )
         }
+        try ISODateFlag.validate(dueAt, flag: "--due-at")
+        try ISODateFlag.validate(unlockAt, flag: "--unlock-at")
+        try ISODateFlag.validate(lockAt, flag: "--lock-at")
     }
 
     func run() async throws {
@@ -54,7 +64,9 @@ struct UpdateAssignmentCommand: AsyncParsableCommand {
             description: descriptionContent,
             published: published,
             pointsPossible: points,
-            dueAt: dueAt
+            dueAt: dueAt,
+            unlockAt: unlockAt,
+            lockAt: lockAt
         )
         let assignment = try await client.updateAssignment(courseID: courseID, id: assignmentID, update: update)
         try Easel.emit(assignment, format: options.format)
