@@ -33,7 +33,9 @@ Sources/
     Models/                 Codable models w/ explicit snake_case CodingKeys (+ *Update / RubricDraft inputs)
     Helpers/
       CanvasJSON.swift      decoder/encoder factories (tolerant ISO 8601 dates)
-      OutputFormatter.swift CanvasRow protocol + json/jsonl/id rendering
+      OutputFormatter.swift CanvasRow protocol + json/jsonl/smalljsonl/md/id rendering
+      SummaryRow.swift      JSONScalar + SummaryRow: the flat id/title/meta subset for smalljsonl
+      Markdown.swift        Markdown helpers (heading/field/table/escaping) for the md format
     CanvasConfig.swift      resolves CANVAS_API_KEY + CANVAS_HOST (arg > env > .env walk-up)
     CanvasError.swift       the only error type EaselKit throws
     DotEnv.swift            .env parser + parent-directory walk
@@ -61,7 +63,7 @@ Tests/
 ## Adding a new endpoint
 
 1. Check the [Canvas API docs](https://developerdocs.instructure.com/services/canvas) for the path, params, and response shape.
-2. Add/extend a model in `Sources/EaselKit/Models/` (explicit snake_case CodingKeys, optional fields, conform to `CanvasRow` if it will be listed).
+2. Add/extend a model in `Sources/EaselKit/Models/` (explicit snake_case CodingKeys, optional fields, conform to `CanvasRow` if it will be listed). `CanvasRow` requires `rowID`, `summaryRow` (a `SummaryRow` of the flat id/title/meta subset for `smalljsonl`), and `markdownRow` (the `md` rendering, built with the `Markdown` helpers).
 3. Add a method in the matching `CanvasClient+<Resource>.swift` — `fetchAll` for lists, `api.get/put/post` for single objects.
 4. Add a fixture (static JSON string, realistic Canvas shape) in `Tests/EaselKitTests/Support/Fixtures.swift` and a test that stubs the route, asserts decoded fields, and (for writes) asserts the recorded request method/body.
 5. Add a thin command file in `Sources/easel/Commands/`, register it in `Easel.configuration.subcommands`, and update the count + add a parse test in `Tests/CLITests/ParsingTests.swift`.
@@ -70,7 +72,7 @@ Tests/
 ## Conventions
 
 - Config resolution order: explicit flag → process environment → nearest `.env` walking up parent directories (closest wins). Keys: `CANVAS_API_KEY`, `CANVAS_HOST`.
-- Every command takes `--format json|jsonl|id` (default `json`) via `GlobalOptions` and prints via `Easel.emit`.
+- Every command takes `--format json|jsonl|smalljsonl|md|id` (default `json`) via `GlobalOptions` and prints via `Easel.emit`. Each `CanvasRow` model supplies its own `summaryRow` (the flat id/title/meta subset for `smalljsonl`) and `markdownRow` (the `md` rendering); `json`/`jsonl` use `Codable` directly.
 - Commands that change things validate that at least one change flag was given (`validate()`), and `--x` / `--x-file` pairs are mutually exclusive; `-` means stdin.
 - Date flags (`--due-at`, `--unlock-at`, `--lock-at`, `--publish-at`) require full ISO 8601 with an explicit time zone; `ISODateFlag.validate` rejects zone-less values in `validate()` because Canvas silently treats them as UTC. Dates in write bodies stay `String` (passed through verbatim), never `Date`.
 - Commit style: plain descriptive messages; don't squash history.

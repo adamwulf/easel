@@ -24,6 +24,16 @@ final class ParsingTests: XCTestCase {
         XCTAssertThrowsError(try CoursesCommand.parse(["--format", "yaml"]))
     }
 
+    func testParsesSmallJSONLFormat() throws {
+        let command = try CoursesCommand.parse(["--format", "smalljsonl"])
+        XCTAssertEqual(command.options.format, .smalljsonl)
+    }
+
+    func testParsesMarkdownFormat() throws {
+        let command = try CoursesCommand.parse(["--format", "md"])
+        XCTAssertEqual(command.options.format, .md)
+    }
+
     func testPagesRequiresCourseID() {
         XCTAssertThrowsError(try PagesCommand.parse([]))
     }

@@ -6,7 +6,7 @@ struct GlobalOptions: ParsableArguments {
     @Option(help: "Canvas host, like \"school.instructure.com\". Defaults to CANVAS_HOST from the environment or the nearest .env file.")
     var host: String?
 
-    @Option(name: [.short, .long], help: "Output format: json, jsonl, or id.")
+    @Option(name: [.short, .long], help: "Output format: json, jsonl, smalljsonl, md, or id.")
     var format: OutputFormat = .json
 
     /// Resolves configuration (CANVAS_API_KEY, host) and builds the client.
