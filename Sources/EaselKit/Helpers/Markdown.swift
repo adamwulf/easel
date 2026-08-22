@@ -83,15 +83,18 @@ enum Markdown {
 
     // MARK: - Escaping
 
-    /// Escapes the Markdown metacharacters that break inline text. Underscore is
-    /// intentionally left alone: CommonMark treats intraword `_` literally, so
-    /// tokens like `online_upload` stay readable while still rendering correctly.
+    /// Escapes the Markdown metacharacters that break inline text. Angle
+    /// brackets are escaped so a title like `Using <canvas>` renders literally
+    /// instead of as inline HTML (HTML bodies pass through their own section,
+    /// never this function). Underscore is intentionally left alone: CommonMark
+    /// treats intraword `_` literally, so tokens like `online_upload` stay
+    /// readable while still rendering correctly.
     static func escapeInline(_ text: String) -> String {
         var out = ""
         out.reserveCapacity(text.count)
         for character in text {
             switch character {
-            case "\\", "`", "*", "[", "]":
+            case "\\", "`", "*", "[", "]", "<", ">":
                 out.append("\\")
                 out.append(character)
             default:

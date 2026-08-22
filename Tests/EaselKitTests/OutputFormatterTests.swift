@@ -143,4 +143,62 @@ final class OutputFormatterTests: XCTestCase {
         XCTAssertTrue(rendered.contains("### Enrollments"))
         XCTAssertTrue(rendered.contains("| StudentEnrollment | StudentEnrollment | active | 42 |"))
     }
+
+    func testMarkdownEscapesAngleBrackets() throws {
+        let json = #"{ "id": 1, "name": "Using <canvas> element" }"#
+        let course = try CanvasJSON.makeDecoder().decode(Course.self, from: Data(json.utf8))
+        let rendered = try OutputFormatter.render(course, format: .md)
+        XCTAssertTrue(rendered.hasPrefix(#"## Using \<canvas\> element (#1)"#))
+    }
+
+    func testMarkdownLeavesUnderscoresUnescaped() throws {
+        let assignment = try CanvasJSON.makeDecoder()
+            .decode(Assignment.self, from: Data(Fixtures.assignmentShow.utf8))
+        let rendered = try OutputFormatter.render(assignment, format: .md)
+        XCTAssertTrue(rendered.contains("- **submission_types:** online_upload"))
+        XCTAssertFalse(rendered.contains(#"online\_upload"#))
+    }
+
+    func testMarkdownTableCellEscapesPipeAndNewline() throws {
+        let json = #"{ "id": 1, "title": "T", "data": [ { "id": "_1", "description": "a | b\nc", "points": 1, "ratings": [] } ] }"#
+        let rubric = try CanvasJSON.makeDecoder().decode(Rubric.self, from: Data(json.utf8))
+        let rendered = try OutputFormatter.render(rubric, format: .md)
+        XCTAssertTrue(rendered.contains(#"a \| b c"#))
+    }
+
+    func testMarkdownRubricRendersCriteriaTable() throws {
+        let rubric = try CanvasJSON.makeDecoder()
+            .decode(Rubric.self, from: Data(Fixtures.rubricShow.utf8))
+        let rendered = try OutputFormatter.render(rubric, format: .md)
+        XCTAssertTrue(rendered.hasPrefix("## Portrait Rubric (#9)"))
+        XCTAssertTrue(rendered.contains("### Criteria"))
+        XCTAssertTrue(rendered.contains("| Likeness | 60 | Strong (60), Developing (30) |"))
+        XCTAssertTrue(rendered.contains("| Craft | 40 | Clean (40), Rough (15) |"))
+    }
+
+    func testMarkdownRubricOmitsCriteriaWhenEmpty() throws {
+        let rubrics = try CanvasJSON.makeDecoder()
+            .decode([Rubric].self, from: Data(Fixtures.rubricsList.utf8))
+        let rendered = try OutputFormatter.render(try XCTUnwrap(rubrics.first), format: .md)
+        XCTAssertFalse(rendered.contains("### Criteria"))
+    }
+
+    func testMarkdownUserOmitsEnrollmentsWhenEmpty() throws {
+        let json = #"{ "id": 1, "name": "No One" }"#
+        let user = try CanvasJSON.makeDecoder().decode(CourseUser.self, from: Data(json.utf8))
+        let rendered = try OutputFormatter.render(user, format: .md)
+        XCTAssertFalse(rendered.contains("### Enrollments"))
+    }
+
+    func testRubricResultWithNilRubricRendersMinimally() throws {
+        let result = RubricResult(rubric: nil, rubricAssociation: nil)
+        XCTAssertEqual(try OutputFormatter.render(result, format: .md), "## Rubric")
+        XCTAssertEqual(try OutputFormatter.render(result, format: .smalljsonl), "{}")
+    }
+
+    func testEmptyListRendersEmptyStringForNewFormats() throws {
+        let none: [Course] = []
+        XCTAssertEqual(try OutputFormatter.render(none, format: .md), "")
+        XCTAssertEqual(try OutputFormatter.render(none, format: .smalljsonl), "")
+    }
 }

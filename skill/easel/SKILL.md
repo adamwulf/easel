@@ -22,7 +22,7 @@ If a command fails with a missing key/host error, the `.env` is absent or incomp
 
 ## Commands
 
-Every command accepts `--format json|jsonl|id` (default `json`) and `--host <domain>`. Run `easel help <subcommand>` for all flags.
+Every command accepts `--format json|jsonl|smalljsonl|md|id` (default `json`) and `--host <domain>`. `smalljsonl` is one slim JSON object per line (id/title + a few key meta fields, no nested bloat); `md` is human-readable Markdown (heading + field list per record, with bodies and rubric/enrollment/criteria tables). Run `easel help <subcommand>` for all flags.
 
 ```bash
 # Find course ids first — everything else needs one

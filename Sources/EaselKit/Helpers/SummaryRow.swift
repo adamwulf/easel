@@ -23,9 +23,10 @@ public enum JSONScalar: Encodable, Sendable {
     }
 }
 
-/// An ordered set of named scalars, encoded as a JSON object for the
-/// `smalljsonl` format. Nil values are dropped, so absent fields never appear
-/// in the output. Field names keep Canvas's snake_case, matching `jsonl`.
+/// A set of named scalars, encoded as a JSON object for the `smalljsonl`
+/// format. Nil values are dropped, so absent fields never appear in the output.
+/// The encoder sorts keys, so declaration order doesn't affect the result.
+/// Field names keep Canvas's snake_case, matching `jsonl`.
 public struct SummaryRow: Encodable, Sendable {
     private let fields: [(String, JSONScalar)]
 
