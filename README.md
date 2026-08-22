@@ -37,7 +37,15 @@ CANVAS_HOST=school.instructure.com
 
 ## Usage
 
-All commands print JSON to stdout by default. `--format jsonl` prints one object per line; `--format id` prints only ids (page url slugs for pages). Field names match the Canvas API docs. Logs go to `~/Library/Logs/easel/`, never to stdout.
+All commands print JSON to stdout by default. Choose the shape with `--format`:
+
+- `json` (default) — pretty-printed JSON: one object, or an array for a list.
+- `jsonl` — one full JSON object per line.
+- `smalljsonl` — one slim JSON object per line: just id/title plus a few key meta fields, for fetching ids and titles without the full-record bloat.
+- `md` — human-readable Markdown: an `## Title (id)` heading and a labeled field list per record, with page/assignment bodies and rubric, enrollment, and criteria tables.
+- `id` — just the ids, one per line (page url slugs for pages).
+
+JSON field names match the Canvas API docs. Logs go to `~/Library/Logs/easel/`, never to stdout.
 
 ### Courses
 

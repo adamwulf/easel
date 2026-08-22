@@ -27,6 +27,57 @@ public struct Rubric: Codable, Sendable, Equatable, CanvasRow {
     public var rowID: String {
         String(id)
     }
+
+    public var summaryRow: SummaryRow {
+        SummaryRow([
+            ("id", .int(id)),
+            ("title", title.map(JSONScalar.string)),
+            ("points_possible", pointsPossible.map(JSONScalar.double)),
+            ("context_type", contextType.map(JSONScalar.string)),
+        ])
+    }
+
+    public var markdownRow: String {
+        Markdown.document(
+            heading: Markdown.heading(2, title, handle: "#\(id)"),
+            fields: [
+                Markdown.field("points_possible", Markdown.number(pointsPossible)),
+                Markdown.field("context_type", contextType),
+                Markdown.field("context_id", Markdown.int(contextID)),
+                Markdown.field("free_form_criterion_comments", Markdown.bool(freeFormCriterionComments)),
+                Markdown.field("read_only", Markdown.bool(readOnly)),
+                Markdown.field("reusable", Markdown.bool(reusable)),
+            ],
+            sections: [criteriaSection]
+        )
+    }
+
+    /// The rubric's criteria rendered as a table, or nil when it has none.
+    private var criteriaSection: String? {
+        guard let data, !data.isEmpty else { return nil }
+        return Markdown.heading(3, "Criteria") + "\n" + data.markdownTable
+    }
+}
+
+extension [RubricCriterion] {
+    /// Renders rubric criteria as a `Criterion | Points | Ratings` table, each
+    /// rating shown as `description (points)`. Shared by rubric and assignment
+    /// Markdown output.
+    var markdownTable: String {
+        Markdown.table(
+            headers: ["Criterion", "Points", "Ratings"],
+            rows: map { criterion in
+                [
+                    criterion.description ?? "",
+                    Markdown.number(criterion.points) ?? "",
+                    (criterion.ratings ?? []).map { rating in
+                        let points = Markdown.number(rating.points).map { " (\($0))" } ?? ""
+                        return (rating.description ?? "") + points
+                    }.joined(separator: ", "),
+                ]
+            }
+        )
+    }
 }
 
 /// One criterion in a rubric. Canvas uses string ids like `"_10"`.
@@ -103,6 +154,18 @@ public struct RubricResult: Codable, Sendable, Equatable, CanvasRow {
 
     public var rowID: String {
         rubric.map { String($0.id) } ?? ""
+    }
+
+    public var summaryRow: SummaryRow {
+        SummaryRow([
+            ("rubric_id", rubric.map { .int($0.id) }),
+            ("title", rubric?.title.map(JSONScalar.string)),
+            ("points_possible", rubric?.pointsPossible.map(JSONScalar.double)),
+        ])
+    }
+
+    public var markdownRow: String {
+        rubric?.markdownRow ?? Markdown.heading(2, "Rubric")
     }
 
     public static func decode(from data: Data) throws -> RubricResult {

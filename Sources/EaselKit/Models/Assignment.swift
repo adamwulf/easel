@@ -40,6 +40,47 @@ public struct Assignment: Codable, Sendable, Equatable, CanvasRow {
     public var rowID: String {
         String(id)
     }
+
+    public var summaryRow: SummaryRow {
+        SummaryRow([
+            ("id", .int(id)),
+            ("name", name.map(JSONScalar.string)),
+            ("points_possible", pointsPossible.map(JSONScalar.double)),
+            ("due_at", dueAt.map(JSONScalar.date)),
+            ("published", published.map(JSONScalar.bool)),
+            ("course_id", courseID.map(JSONScalar.int)),
+        ])
+    }
+
+    public var markdownRow: String {
+        Markdown.document(
+            heading: Markdown.heading(2, name, handle: "#\(id)"),
+            fields: [
+                Markdown.field("points_possible", Markdown.number(pointsPossible)),
+                Markdown.field("grading_type", gradingType),
+                Markdown.field("due_at", Markdown.date(dueAt)),
+                Markdown.field("unlock_at", Markdown.date(unlockAt)),
+                Markdown.field("lock_at", Markdown.date(lockAt)),
+                Markdown.field("published", Markdown.bool(published)),
+                Markdown.field("submission_types", Markdown.list(submissionTypes)),
+                Markdown.field("course_id", Markdown.int(courseID)),
+                Markdown.urlField("html_url", htmlURL),
+            ],
+            // Description is stored as HTML; passed through verbatim.
+            sections: [description, rubricSection]
+        )
+    }
+
+    /// The attached rubric rendered as a criteria table, or nil when the
+    /// assignment carries no rubric.
+    private var rubricSection: String? {
+        guard let rubric, !rubric.isEmpty else { return nil }
+        var heading = Markdown.heading(3, rubricSettings?.title ?? "Rubric")
+        if let points = Markdown.number(rubricSettings?.pointsPossible) {
+            heading += " (\(points) pts)"
+        }
+        return heading + "\n" + rubric.markdownTable
+    }
 }
 
 /// Summary of the rubric attached to an assignment.

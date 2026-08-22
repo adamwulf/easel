@@ -32,6 +32,34 @@ public struct Page: Codable, Sendable, Equatable, CanvasRow {
     public var rowID: String {
         url
     }
+
+    public var summaryRow: SummaryRow {
+        SummaryRow([
+            ("page_id", .int(pageID)),
+            ("url", .string(url)),
+            ("title", title.map(JSONScalar.string)),
+            ("published", published.map(JSONScalar.bool)),
+            ("front_page", frontPage.map(JSONScalar.bool)),
+            ("updated_at", updatedAt.map(JSONScalar.date)),
+        ])
+    }
+
+    public var markdownRow: String {
+        Markdown.document(
+            heading: Markdown.heading(2, title, handle: url),
+            fields: [
+                Markdown.field("published", Markdown.bool(published)),
+                Markdown.field("front_page", Markdown.bool(frontPage)),
+                Markdown.field("editing_roles", editingRoles),
+                Markdown.field("locked_for_user", Markdown.bool(lockedForUser)),
+                Markdown.field("publish_at", Markdown.date(publishAt)),
+                Markdown.field("created_at", Markdown.date(createdAt)),
+                Markdown.field("updated_at", Markdown.date(updatedAt)),
+            ],
+            // The body is stored as HTML; passed through verbatim.
+            sections: [body]
+        )
+    }
 }
 
 /// The fields that can change on a page. Nil fields are omitted from the
