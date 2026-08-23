@@ -20,7 +20,10 @@ struct UsersCommand: AsyncParsableCommand {
 
     func run() async throws {
         let client = try options.makeClient()
-        let users = try await client.users(courseID: courseID, enrollmentType: enrollmentType, searchTerm: search)
+        var users = try await client.users(courseID: courseID, enrollmentType: enrollmentType, searchTerm: search)
+        if options.isAnonymous {
+            users = users.map { $0.anonymized() }
+        }
         try Easel.emit(users, format: options.format)
     }
 }

@@ -7,6 +7,7 @@ import Foundation
 public struct CanvasConfig: Sendable, Equatable {
     public static let apiKeyName = "CANVAS_API_KEY"
     public static let hostKeyName = "CANVAS_HOST"
+    public static let anonymousKeyName = "EASEL_ANONYMOUS"
 
     /// The instance root, like `https://school.instructure.com`.
     public let baseURL: URL
@@ -33,6 +34,39 @@ public struct CanvasConfig: Sendable, Equatable {
             throw CanvasError.missingHost
         }
         return CanvasConfig(baseURL: try normalizeHost(rawHost), token: token)
+    }
+
+    /// Resolves whether anonymous output mode is on. It is one-way: on when the
+    /// `--anonymous` flag is given OR when `EASEL_ANONYMOUS` is truthy in the
+    /// process environment or the nearest `.env`. Nothing turns it off, so a
+    /// truthy env var is a hard privacy guarantee — the flag can only reinforce
+    /// it. Unset/falsy everywhere ⇒ off, so the default behavior never changes.
+    /// An env value is truthy unless it reads as an explicit negative (`0`,
+    /// `false`, `no`, `off`).
+    public static func resolveAnonymous(
+        flag: Bool = false,
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        startingIn directory: URL? = nil
+    ) -> Bool {
+        if flag {
+            return true
+        }
+        guard let raw = value(forKey: anonymousKeyName, environment: environment, startingIn: directory) else {
+            return false
+        }
+        return parseBool(raw)
+    }
+
+    /// Interprets a `.env`/environment string as a boolean. Recognized negatives
+    /// (`0`, `false`, `no`, `off`, case-insensitive) are false; any other
+    /// non-empty value counts as set, hence true.
+    static func parseBool(_ raw: String) -> Bool {
+        switch raw.trimmingCharacters(in: .whitespaces).lowercased() {
+        case "0", "false", "no", "off", "":
+            return false
+        default:
+            return true
+        }
     }
 
     static func value(forKey key: String, environment: [String: String], startingIn directory: URL?) -> String? {

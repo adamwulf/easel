@@ -54,6 +54,56 @@ public struct CourseUser: Codable, Sendable, Equatable, CanvasRow {
         )
     }
 
+    /// Returns a copy safe for anonymous output: no last names, no contact
+    /// information. `name` and `short_name` become the first three letters of
+    /// the given name plus a one-letter surname initial ("Adam Wulf" → "Ada W");
+    /// `sortable_name` keeps Canvas's sort-by-surname ordering as
+    /// "W, Ada". `email` and `login_id` (the only identifying addresses on a
+    /// user) are dropped. The numeric id, sis_user_id, pronouns, and enrollments
+    /// carry no name and are kept unchanged.
+    public func anonymized() -> CourseUser {
+        CourseUser(
+            id: id,
+            name: name.map(CourseUser.redactName),
+            sortableName: sortableName.map(CourseUser.redactSortableName),
+            shortName: shortName.map(CourseUser.redactName),
+            sisUserID: sisUserID,
+            loginID: nil,
+            email: nil,
+            pronouns: pronouns,
+            enrollments: enrollments
+        )
+    }
+
+    /// Reduces a "First Last" name to the first three letters of the given name
+    /// plus a one-letter surname initial: "Adam Wulf" → "Ada W". A given name
+    /// shorter than three letters contributes only what it has ("Jo Smith" →
+    /// "Jo S"); middle names are dropped, so only the final token's initial is
+    /// used ("Mary Jane Watson" → "Mar W"). A single-token name has no surname to
+    /// abbreviate, so just its first three letters remain ("Prince" → "Pri").
+    /// An empty name stays empty.
+    static func redactName(_ full: String) -> String {
+        let tokens = full.split(whereSeparator: { $0.isWhitespace })
+        guard let first = tokens.first else { return full }
+        let stub = String(first.prefix(3))
+        guard tokens.count > 1, let initial = tokens.last?.first else { return stub }
+        return "\(stub) \(initial)"
+    }
+
+    /// Reduces Canvas's "Last, First" sortable name to a surname initial plus the
+    /// first three letters of the given name, keeping the sort-by-surname
+    /// ordering: "Wulf, Adam" → "W, Ada". A value with no comma is treated as a
+    /// plain name via `redactName`.
+    static func redactSortableName(_ sortable: String) -> String {
+        let parts = sortable.split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false)
+        guard parts.count == 2 else { return redactName(sortable) }
+        let last = parts[0].trimmingCharacters(in: .whitespaces)
+        let first = parts[1].trimmingCharacters(in: .whitespaces)
+        let stub = String(first.prefix(3))
+        guard let initial = last.first else { return stub }
+        return "\(initial), \(stub)"
+    }
+
     /// The user's enrollments rendered as a table, or nil when there are none.
     private var enrollmentsSection: String? {
         guard let enrollments, !enrollments.isEmpty else { return nil }

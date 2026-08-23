@@ -106,6 +106,17 @@ final class ParsingTests: XCTestCase {
         XCTAssertEqual(command.enrollmentType, "student")
     }
 
+    func testAnonymousFlagOnlyTurnsOn() throws {
+        // Absent ⇒ false, so env/.env alone can still turn it on.
+        XCTAssertFalse(try UsersCommand.parse(["101"]).options.anonymous)
+        XCTAssertTrue(try UsersCommand.parse(["101", "--anonymous"]).options.anonymous)
+    }
+
+    func testNoAnonymousFlagIsRejected() {
+        // Anonymous mode is one-way; there is no --no-anonymous override.
+        XCTAssertThrowsError(try UsersCommand.parse(["101", "--no-anonymous"]))
+    }
+
     func testCreateRubricRequiresAssignmentAndFile() {
         XCTAssertThrowsError(try CreateRubricCommand.parse(["101"]))
     }
