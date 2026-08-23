@@ -106,6 +106,13 @@ final class ParsingTests: XCTestCase {
         XCTAssertEqual(command.enrollmentType, "student")
     }
 
+    func testAnonymousFlagIsTriState() throws {
+        // Unset ⇒ nil, so resolution can fall back to env/.env.
+        XCTAssertNil(try UsersCommand.parse(["101"]).options.anonymous)
+        XCTAssertEqual(try UsersCommand.parse(["101", "--anonymous"]).options.anonymous, true)
+        XCTAssertEqual(try UsersCommand.parse(["101", "--no-anonymous"]).options.anonymous, false)
+    }
+
     func testCreateRubricRequiresAssignmentAndFile() {
         XCTAssertThrowsError(try CreateRubricCommand.parse(["101"]))
     }

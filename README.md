@@ -35,6 +35,14 @@ CANVAS_API_KEY=1234~abcdefg...
 CANVAS_HOST=school.instructure.com
 ```
 
+One optional setting controls **anonymous mode**:
+
+| Key | Value |
+| --- | --- |
+| `EASEL_ANONYMOUS` | Set it (`1`, `true`, `yes`, `on`) to redact student identities from output. Off by default; `0`, `false`, `no`, or `off` also mean off. |
+
+It resolves like the others (`--anonymous`/`--no-anonymous` flag wins, then the environment, then `.env`). See [Anonymous mode](#anonymous-mode).
+
 ## Usage
 
 All commands print JSON to stdout by default. Choose the shape with `--format`:
@@ -108,7 +116,34 @@ easel rejects values without a time zone before sending anything, because Canvas
 easel users 101                           # everyone in the course
 easel users 101 --enrollment-type student # students only
 easel users 101 --search rivera           # search by name or login
+easel users 101 --anonymous               # redact last names, emails, login ids
 ```
+
+### Anonymous mode
+
+When you need course data without exposing who's who — sharing output, feeding it
+to another tool, filing a bug — turn on anonymous mode. Set `EASEL_ANONYMOUS`
+(in the environment or `.env`) or pass `--anonymous` on any command; pass
+`--no-anonymous` to force it off for a single run. It's **off by default**, so
+normal output never changes.
+
+With it on, every format (`json`, `jsonl`, `smalljsonl`, `md`; `id` is a numeric
+id and is never a name) redacts the person fields on each user:
+
+| Field | Redacted to |
+| --- | --- |
+| `name`, `short_name` | first 3 letters of the given name + surname initial — `Adam Wulf` → `Ada W` |
+| `sortable_name` | surname initial + first 3 letters of the given name — `Wulf, Adam` → `W, Ada` |
+| `email` | dropped (`null`, or absent from `smalljsonl`) |
+| `login_id` | dropped (`null`, or absent from `smalljsonl`) |
+
+Short and single-word names degrade gracefully: a given name under three letters
+contributes only what it has (`Jo Smith` → `Jo S`), middle names are dropped
+(`Mary Jane Watson` → `Mar W`), and a lone name keeps just its first three
+letters (`Prince` → `Pri`). The numeric `id`, `sis_user_id`, `pronouns`, and
+enrollments carry no name and pass through unchanged, so an agent can still
+cross-reference a person by id. Only the `users` command emits personal data
+today, so it's the only output anonymous mode affects.
 
 ### Rubrics
 

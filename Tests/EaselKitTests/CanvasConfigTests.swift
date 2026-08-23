@@ -81,4 +81,44 @@ final class CanvasConfigTests: XCTestCase {
         let config = CanvasConfig(baseURL: URL(string: "https://school.instructure.com")!, token: "token")
         XCTAssertEqual(config.apiBaseURL.absoluteString, "https://school.instructure.com/api/v1")
     }
+
+    // MARK: - Anonymous mode resolution
+
+    func testAnonymousDefaultsOffWhenUnset() {
+        XCTAssertFalse(CanvasConfig.resolveAnonymous(environment: [:], startingIn: root))
+    }
+
+    func testAnonymousFromEnvironment() {
+        XCTAssertTrue(CanvasConfig.resolveAnonymous(environment: ["EASEL_ANONYMOUS": "1"], startingIn: root))
+        XCTAssertTrue(CanvasConfig.resolveAnonymous(environment: ["EASEL_ANONYMOUS": "true"], startingIn: root))
+    }
+
+    func testAnonymousExplicitNegativeIsOff() {
+        for negative in ["0", "false", "no", "off", "FALSE", "Off"] {
+            XCTAssertFalse(
+                CanvasConfig.resolveAnonymous(environment: ["EASEL_ANONYMOUS": negative], startingIn: root),
+                "\(negative) should read as off"
+            )
+        }
+    }
+
+    func testAnonymousFromDotEnvFallback() throws {
+        try writeEnvFile("EASEL_ANONYMOUS=yes\n")
+        XCTAssertTrue(CanvasConfig.resolveAnonymous(environment: [:], startingIn: root))
+    }
+
+    func testAnonymousEnvironmentBeatsDotEnv() throws {
+        try writeEnvFile("EASEL_ANONYMOUS=true\n")
+        XCTAssertFalse(CanvasConfig.resolveAnonymous(environment: ["EASEL_ANONYMOUS": "0"], startingIn: root))
+    }
+
+    func testAnonymousFlagBeatsEverything() throws {
+        try writeEnvFile("EASEL_ANONYMOUS=true\n")
+        XCTAssertFalse(
+            CanvasConfig.resolveAnonymous(flag: false, environment: ["EASEL_ANONYMOUS": "true"], startingIn: root)
+        )
+        XCTAssertTrue(
+            CanvasConfig.resolveAnonymous(flag: true, environment: ["EASEL_ANONYMOUS": "0"], startingIn: root)
+        )
+    }
 }

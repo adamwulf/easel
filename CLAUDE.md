@@ -36,13 +36,13 @@ Sources/
       OutputFormatter.swift CanvasRow protocol + json/jsonl/smalljsonl/md/id rendering
       SummaryRow.swift      JSONScalar + SummaryRow: the flat id/title/meta subset for smalljsonl
       Markdown.swift        Markdown helpers (heading/field/table/escaping) for the md format
-    CanvasConfig.swift      resolves CANVAS_API_KEY + CANVAS_HOST (arg > env > .env walk-up)
+    CanvasConfig.swift      resolves CANVAS_API_KEY + CANVAS_HOST (arg > env > .env walk-up); resolveAnonymous for EASEL_ANONYMOUS
     CanvasError.swift       the only error type EaselKit throws
     DotEnv.swift            .env parser + parent-directory walk
   easel/                    ONLY CLI concerns
     Easel.swift             @main root; bootstraps logging, parses, runs, drains logs; emit() helper
     EaselLog.swift          FellerBuncher bootstrap -> ~/Library/Logs/easel, console .none
-    GlobalOptions.swift     --host, --format; makeClient()
+    GlobalOptions.swift     --host, --format, --anonymous; makeClient(), isAnonymous
     FileInput.swift         file-or-stdin reading for --body-file etc.
     Commands/               one file per subcommand, all thin: parse -> client call -> emit
 Tests/
@@ -71,8 +71,9 @@ Tests/
 
 ## Conventions
 
-- Config resolution order: explicit flag → process environment → nearest `.env` walking up parent directories (closest wins). Keys: `CANVAS_API_KEY`, `CANVAS_HOST`.
+- Config resolution order: explicit flag → process environment → nearest `.env` walking up parent directories (closest wins). Keys: `CANVAS_API_KEY`, `CANVAS_HOST`, `EASEL_ANONYMOUS`.
 - Every command takes `--format json|jsonl|smalljsonl|md|id` (default `json`) via `GlobalOptions` and prints via `Easel.emit`. Each `CanvasRow` model supplies its own `summaryRow` (the flat id/title/meta subset for `smalljsonl`) and `markdownRow` (the `md` rendering); `json`/`jsonl` use `Codable` directly.
+- **Anonymous mode** (`EASEL_ANONYMOUS` / `--anonymous`/`--no-anonymous`, resolved via `CanvasConfig.resolveAnonymous`; off by default) redacts user-identifying data. Redaction is a model transform in EaselKit — `CourseUser.anonymized()`: names become the first 3 letters of the given name + surname initial (`Adam Wulf` → `Ada W`, graceful for short/single-word names), and `email`/`login_id` are set to `nil`. It's applied in the command before `emit`, so it covers every format at once. `CanvasConfig` itself stays the pure token+host value the network layer needs; anonymous is a presentation concern resolved separately with the same `.env` machinery. If a future model gains names/emails, give it an `anonymized()` and apply it in its command.
 - Commands that change things validate that at least one change flag was given (`validate()`), and `--x` / `--x-file` pairs are mutually exclusive; `-` means stdin.
 - Date flags (`--due-at`, `--unlock-at`, `--lock-at`, `--publish-at`) require full ISO 8601 with an explicit time zone; `ISODateFlag.validate` rejects zone-less values in `validate()` because Canvas silently treats them as UTC. Dates in write bodies stay `String` (passed through verbatim), never `Date`.
 - Commit style: plain descriptive messages; don't squash history.
