@@ -112,13 +112,23 @@ final class CanvasConfigTests: XCTestCase {
         XCTAssertFalse(CanvasConfig.resolveAnonymous(environment: ["EASEL_ANONYMOUS": "0"], startingIn: root))
     }
 
-    func testAnonymousFlagBeatsEverything() throws {
-        try writeEnvFile("EASEL_ANONYMOUS=true\n")
-        XCTAssertFalse(
-            CanvasConfig.resolveAnonymous(flag: false, environment: ["EASEL_ANONYMOUS": "true"], startingIn: root)
-        )
+    func testAnonymousFlagTurnsOnDespiteFalsyEnv() {
+        // The flag can only turn redaction ON — even when the env says off.
         XCTAssertTrue(
             CanvasConfig.resolveAnonymous(flag: true, environment: ["EASEL_ANONYMOUS": "0"], startingIn: root)
         )
+        XCTAssertTrue(
+            CanvasConfig.resolveAnonymous(flag: true, environment: [:], startingIn: root)
+        )
+    }
+
+    func testAnonymousEnvTruthyCannotBeDisabled() throws {
+        // Anonymous mode is one-way: a truthy env/.env value stays on even
+        // though the flag defaults to off (there is no --no-anonymous).
+        XCTAssertTrue(
+            CanvasConfig.resolveAnonymous(flag: false, environment: ["EASEL_ANONYMOUS": "true"], startingIn: root)
+        )
+        try writeEnvFile("EASEL_ANONYMOUS=true\n")
+        XCTAssertTrue(CanvasConfig.resolveAnonymous(flag: false, environment: [:], startingIn: root))
     }
 }

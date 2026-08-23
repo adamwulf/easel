@@ -36,18 +36,20 @@ public struct CanvasConfig: Sendable, Equatable {
         return CanvasConfig(baseURL: try normalizeHost(rawHost), token: token)
     }
 
-    /// Resolves whether anonymous output mode is on. Precedence matches the
-    /// other settings: an explicit flag wins, then the process environment, then
-    /// the nearest `.env` (`EASEL_ANONYMOUS`). Unset everywhere ⇒ off, so the
-    /// default behavior never changes. A set value is truthy unless it reads as
-    /// an explicit negative (`0`, `false`, `no`, `off`).
+    /// Resolves whether anonymous output mode is on. It is one-way: on when the
+    /// `--anonymous` flag is given OR when `EASEL_ANONYMOUS` is truthy in the
+    /// process environment or the nearest `.env`. Nothing turns it off, so a
+    /// truthy env var is a hard privacy guarantee — the flag can only reinforce
+    /// it. Unset/falsy everywhere ⇒ off, so the default behavior never changes.
+    /// An env value is truthy unless it reads as an explicit negative (`0`,
+    /// `false`, `no`, `off`).
     public static func resolveAnonymous(
-        flag: Bool? = nil,
+        flag: Bool = false,
         environment: [String: String] = ProcessInfo.processInfo.environment,
         startingIn directory: URL? = nil
     ) -> Bool {
-        if let flag {
-            return flag
+        if flag {
+            return true
         }
         guard let raw = value(forKey: anonymousKeyName, environment: environment, startingIn: directory) else {
             return false

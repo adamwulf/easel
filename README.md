@@ -41,7 +41,7 @@ One optional setting controls **anonymous mode**:
 | --- | --- |
 | `EASEL_ANONYMOUS` | Set it (`1`, `true`, `yes`, `on`) to redact student identities from output. Off by default; `0`, `false`, `no`, or `off` also mean off. |
 
-It resolves like the others (`--anonymous`/`--no-anonymous` flag wins, then the environment, then `.env`). See [Anonymous mode](#anonymous-mode).
+It's one-way: anonymous mode is on when `EASEL_ANONYMOUS` is truthy in the environment or `.env` **or** when `--anonymous` is passed. A truthy env value can't be turned off — there is no override flag — so it's a hard privacy guarantee. See [Anonymous mode](#anonymous-mode).
 
 ## Usage
 
@@ -123,9 +123,14 @@ easel users 101 --anonymous               # redact last names, emails, login ids
 
 When you need course data without exposing who's who — sharing output, feeding it
 to another tool, filing a bug — turn on anonymous mode. Set `EASEL_ANONYMOUS`
-(in the environment or `.env`) or pass `--anonymous` on any command; pass
-`--no-anonymous` to force it off for a single run. It's **off by default**, so
-normal output never changes.
+(in the environment or `.env`) or pass `--anonymous` on any command. It's
+**off by default**, so normal output never changes.
+
+Anonymous mode is **one-way**: `anonymous = --anonymous OR EASEL_ANONYMOUS-truthy`.
+The flag can only turn it on, and there is no `--no-anonymous`. Once a truthy
+`EASEL_ANONYMOUS` is in the environment or `.env`, nothing on the command line
+can bypass redaction — so an agent running the CLI can't leak identities past a
+policy the env var sets.
 
 With it on, every format (`json`, `jsonl`, `smalljsonl`, `md`; `id` is a numeric
 id and is never a name) redacts the person fields on each user:

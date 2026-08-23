@@ -9,11 +9,8 @@ struct GlobalOptions: ParsableArguments {
     @Option(name: [.short, .long], help: "Output format: json, jsonl, smalljsonl, md, or id.")
     var format: OutputFormat = .json
 
-    @Flag(
-        inversion: .prefixedNo,
-        help: "Redact last names, emails, and login ids from output. Defaults to EASEL_ANONYMOUS from the environment or the nearest .env file."
-    )
-    var anonymous: Bool?
+    @Flag(help: "Redact last names, emails, and login ids from output. EASEL_ANONYMOUS in the environment or nearest .env also turns this on; once on it cannot be turned off.")
+    var anonymous: Bool = false
 
     /// Resolves configuration (CANVAS_API_KEY, host) and builds the client.
     func makeClient() throws -> CanvasClient {
@@ -21,8 +18,10 @@ struct GlobalOptions: ParsableArguments {
         return CanvasClient(config: config)
     }
 
-    /// Whether anonymous output mode is on: `--anonymous`/`--no-anonymous` wins,
-    /// otherwise `EASEL_ANONYMOUS` from the environment or nearest `.env`.
+    /// Whether anonymous output mode is on. One-way: it's on when `--anonymous`
+    /// is given OR when `EASEL_ANONYMOUS` is truthy in the environment or nearest
+    /// `.env`. The flag can only turn redaction on — nothing turns it off — so a
+    /// truthy env var is a hard privacy guarantee an agent can't bypass.
     var isAnonymous: Bool {
         CanvasConfig.resolveAnonymous(flag: anonymous)
     }
