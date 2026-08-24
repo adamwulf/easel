@@ -67,6 +67,7 @@ final class PagesTests: XCTestCase {
         let recorded = await transport.recorded
         let request = try XCTUnwrap(recorded.first)
         XCTAssertEqual(request.method, "POST")
+        XCTAssertEqual(request.url.path, "/api/v1/courses/101/pages")
         XCTAssertEqual(request.headers["Content-Type"], "application/json")
         let bodyData = try XCTUnwrap(request.body)
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
