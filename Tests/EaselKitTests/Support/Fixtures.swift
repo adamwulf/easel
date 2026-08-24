@@ -335,6 +335,67 @@ enum Fixtures {
     }
     """
 
+    static let rubricUpdateResponse = """
+    {
+      "rubric": {
+        "id": 9,
+        "title": "Essay Rubric",
+        "context_id": 101,
+        "context_type": "Course",
+        "points_possible": 15.0,
+        "free_form_criterion_comments": false,
+        "data": [
+          {
+            "id": "_1",
+            "description": "Thesis",
+            "long_description": "A clear, arguable thesis.",
+            "points": 5.0,
+            "ratings": [
+              { "id": "_2", "description": "Excellent", "points": 5.0 },
+              { "id": "_3", "description": "Adequate", "points": 3.0 },
+              { "id": "_4", "description": "Missing", "points": 0.0 }
+            ]
+          },
+          {
+            "id": "_5",
+            "description": "Evidence",
+            "points": 10.0,
+            "ratings": [
+              { "id": "_6", "description": "Strong", "points": 10.0 },
+              { "id": "_7", "description": "Weak", "points": 4.0 }
+            ]
+          }
+        ]
+      },
+      "rubric_association": null
+    }
+    """
+
+    static let rubricDeleteResponse = """
+    {
+      "id": 9,
+      "title": "Portrait Rubric",
+      "context_id": 101,
+      "context_type": "Course",
+      "points_possible": 100.0,
+      "free_form_criterion_comments": false,
+      "read_only": false,
+      "reusable": false,
+      "data": [
+        {
+          "id": "_10",
+          "description": "Likeness",
+          "points": 60.0,
+          "criterion_use_range": false,
+          "ratings": [
+            { "id": "_11", "description": "Strong", "points": 60.0 },
+            { "id": "_12", "description": "Developing", "points": 30.0 }
+          ]
+        }
+      ]
+    }
+    """
+
     static let rubricBareResponse = """
     {
       "id": 10,

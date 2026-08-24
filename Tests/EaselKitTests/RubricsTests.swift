@@ -70,20 +70,61 @@ final class RubricsTests: XCTestCase {
 
     func testUpdateRubricUsesPutOnRubricPath() async throws {
         let transport = StubTransport()
-        await transport.on("/courses/101/rubrics/9", method: "PUT", json: Fixtures.rubricCreateResponse)
+        await transport.on("/courses/101/rubrics/9", method: "PUT", json: Fixtures.rubricUpdateResponse)
         let client = CanvasClient.stubbed(transport)
 
         let draft = try RubricDraft.parse(json: Fixtures.rubricDraftJSON)
         let result = try await client.updateRubric(courseID: 101, id: 9, draft: draft)
 
-        XCTAssertEqual(result.rubric?.id, 10)
+        XCTAssertEqual(result.rubric?.id, 9)
+        XCTAssertEqual(result.rubric?.title, "Essay Rubric")
+        XCTAssertEqual(result.rubric?.pointsPossible, 15.0)
+        XCTAssertEqual(result.rubric?.data?.count, 2)
+        XCTAssertNil(result.rubricAssociation)
         let recorded = await transport.recorded
         let request = try XCTUnwrap(recorded.first)
         XCTAssertEqual(request.method, "PUT")
-        XCTAssertTrue(request.url.path.hasSuffix("/courses/101/rubrics/9"))
+        XCTAssertEqual(request.url.path, "/api/v1/courses/101/rubrics/9")
         let bodyData = try XCTUnwrap(request.body)
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertNil(object["rubric_association"], "no association was requested")
+
+        let rubric = try XCTUnwrap(object["rubric"] as? [String: Any])
+        XCTAssertEqual(Set(rubric.keys), ["title", "free_form_criterion_comments", "criteria"])
+        XCTAssertEqual(rubric["title"] as? String, "Essay Rubric")
+        XCTAssertEqual(rubric["free_form_criterion_comments"] as? Bool, false)
+        let criteria = try XCTUnwrap(rubric["criteria"] as? [String: Any])
+        XCTAssertEqual(Set(criteria.keys), ["0", "1"])
+        let criterion1 = try XCTUnwrap(criteria["1"] as? [String: Any])
+        XCTAssertEqual(Set(criterion1.keys), ["description", "points", "ratings"])
+        XCTAssertEqual(criterion1["description"] as? String, "Evidence")
+        XCTAssertEqual(criterion1["points"] as? Double, 10.0)
+        let ratings = try XCTUnwrap(criterion1["ratings"] as? [String: Any])
+        XCTAssertEqual(Set(ratings.keys), ["0", "1"])
+        let rating1 = try XCTUnwrap(ratings["1"] as? [String: Any])
+        XCTAssertEqual(Set(rating1.keys), ["description", "points"])
+        XCTAssertEqual(rating1["description"] as? String, "Weak")
+        XCTAssertEqual(rating1["points"] as? Double, 4.0)
+    }
+
+    func testDeleteRubricUsesDeleteAndDecodesBareRubric() async throws {
+        let transport = StubTransport()
+        await transport.on("/courses/101/rubrics/9", method: "DELETE", json: Fixtures.rubricDeleteResponse)
+        let client = CanvasClient.stubbed(transport)
+
+        let rubric = try await client.deleteRubric(courseID: 101, id: 9)
+
+        XCTAssertEqual(rubric.id, 9)
+        XCTAssertEqual(rubric.title, "Portrait Rubric")
+        XCTAssertEqual(rubric.pointsPossible, 100.0)
+        XCTAssertEqual(rubric.data?.first?.description, "Likeness")
+
+        let recorded = await transport.recorded
+        XCTAssertEqual(recorded.count, 1)
+        let request = try XCTUnwrap(recorded.first)
+        XCTAssertEqual(request.method, "DELETE")
+        XCTAssertEqual(request.url.path, "/api/v1/courses/101/rubrics/9")
+        XCTAssertNil(request.body)
     }
 
     func testRubricResultFallsBackToBareRubric() throws {
