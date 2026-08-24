@@ -2,7 +2,7 @@
 
 ## What this is
 
-`easel` is a Swift package + CLI for the Canvas LMS API, built for AI agents that manage courses: list courses, read/update wiki pages and assignments, list people, and create/update assignment rubrics. The architecture mirrors the `hunch` (Notion) and `cirqueduci` (CircleCI) CLIs: a fat reusable library, a thin executable.
+`easel` is a Swift package + CLI for the Canvas LMS API, built for AI agents that manage courses: list courses, create/read/update/delete wiki pages and assignments, list people, and create/read/update/delete assignment rubrics. The architecture mirrors the `hunch` (Notion) and `cirqueduci` (CircleCI) CLIs: a fat reusable library, a thin executable.
 
 ## Build and test
 

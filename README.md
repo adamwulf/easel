@@ -1,6 +1,6 @@
 # easel
 
-A Swift package and CLI tool for the [Canvas LMS API](https://developerdocs.instructure.com/services/canvas), built so AI agents (and humans) can read and update course content from the terminal: list courses, read and edit wiki pages and assignments, list people, and manage assignment rubrics.
+A Swift package and CLI tool for the [Canvas LMS API](https://developerdocs.instructure.com/services/canvas), built so AI agents (and humans) can manage course content from the terminal: list courses, create/read/update/delete wiki pages and assignments, list people, and create/read/update/delete assignment rubrics.
 
 An easel is the thing that holds a canvas.
 
@@ -72,11 +72,18 @@ easel pages 101 --search syllabus         # filter by title
 easel page 101 course-syllabus            # one page, with its HTML body
 easel page 101 page_id:11                 # look up by id instead of slug
 
+easel create-page 101 --title "Week 2 Materials" --body-file week-2.html
+easel create-page 101 --title "Course Home" --published true --front-page true
+cat week-2.html | easel create-page 101 --title "Week 2 Materials" --body-file -
+
 easel update-page 101 course-syllabus --title "Syllabus (Fall 2026)"
 easel update-page 101 course-syllabus --body-file syllabus.html
 cat syllabus.html | easel update-page 101 course-syllabus --body-file -
 easel update-page 101 week-1-materials --published true       # publish / unpublish
 easel update-page 101 week-1-materials --publish-at "2026-08-24T08:00:00-05:00"
+
+easel delete-page 101 obsolete-page
+easel delete-page 101 page_id:11
 ```
 
 `--publish-at` schedules a future publication date; it only takes effect when the Canvas account has the Scheduled Page Publication feature enabled. Pages have no unlock/lock availability dates in the Canvas API — those exist on assignments.
@@ -88,6 +95,9 @@ easel assignments 101                     # list assignments
 easel assignments 101 --search portrait   # filter by title
 easel assignment 101 501                  # one assignment, with description + rubric
 
+easel create-assignment 101 --name "Value Study" --description-file brief.html
+easel create-assignment 101 --name "Value Study" --points 75 --due-at "2026-09-19T23:59:59-05:00"
+
 easel update-assignment 101 501 --name "Self Portrait (Revised)"
 easel update-assignment 101 501 --description-file brief.html
 easel update-assignment 101 501 --points 120 --due-at "2026-09-12T23:59:00-05:00"
@@ -97,6 +107,8 @@ easel update-assignment 101 501 --published true              # publish / unpubl
 easel update-assignment 101 501 \
   --unlock-at "2026-08-24T00:00:00-05:00" \
   --lock-at "2026-09-13T23:59:00-05:00"
+
+easel delete-assignment 101 502
 ```
 
 ### Dates and time zones
@@ -159,6 +171,7 @@ easel rubric 101 9                        # one rubric, with criteria + ratings
 easel create-rubric 101 --assignment 501 --file rubric.json
 easel update-rubric 101 9 --file rubric.json
 easel update-rubric 101 9 --file rubric.json --assignment 502
+easel delete-rubric 101 9
 ```
 
 The rubric JSON file uses plain arrays (easel converts to the indexed-hash form Canvas expects):
