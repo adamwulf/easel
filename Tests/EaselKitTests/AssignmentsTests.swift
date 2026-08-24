@@ -39,6 +39,70 @@ final class AssignmentsTests: XCTestCase {
         XCTAssertEqual(assignment.rubricSettings?.title, "Portrait Rubric")
     }
 
+    func testCreateAssignmentSendsAllProvidedFieldsAndDecodesResponse() async throws {
+        let transport = StubTransport()
+        await transport.on("/courses/101/assignments", method: "POST", json: Fixtures.assignmentCreated)
+        let client = CanvasClient.stubbed(transport)
+
+        let draft = AssignmentCreate(
+            name: "Value Study",
+            description: "<p>Paint a grayscale still life.</p>",
+            published: false,
+            pointsPossible: 75.0,
+            dueAt: "2026-09-19T23:59:59-05:00",
+            unlockAt: "2026-09-01T00:00:00-05:00",
+            lockAt: "2026-09-21T23:59:59-05:00"
+        )
+        let assignment = try await client.createAssignment(courseID: 101, assignment: draft)
+
+        XCTAssertEqual(assignment.id, 503)
+        XCTAssertEqual(assignment.name, "Value Study")
+        XCTAssertEqual(assignment.pointsPossible, 75.0)
+        XCTAssertEqual(assignment.courseID, 101)
+        XCTAssertNotNil(assignment.dueAt)
+
+        let recorded = await transport.recorded
+        let request = try XCTUnwrap(recorded.first)
+        XCTAssertEqual(request.method, "POST")
+        XCTAssertEqual(request.url.path, "/api/v1/courses/101/assignments")
+        XCTAssertEqual(request.headers["Content-Type"], "application/json")
+        let bodyData = try XCTUnwrap(request.body)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
+        let payload = try XCTUnwrap(object["assignment"] as? [String: Any])
+        XCTAssertEqual(payload["name"] as? String, "Value Study")
+        XCTAssertEqual(payload["description"] as? String, "<p>Paint a grayscale still life.</p>")
+        XCTAssertEqual(payload["published"] as? Bool, false)
+        XCTAssertEqual(payload["points_possible"] as? Double, 75.0)
+        XCTAssertEqual(payload["due_at"] as? String, "2026-09-19T23:59:59-05:00")
+        XCTAssertEqual(payload["unlock_at"] as? String, "2026-09-01T00:00:00-05:00")
+        XCTAssertEqual(payload["lock_at"] as? String, "2026-09-21T23:59:59-05:00")
+    }
+
+    func testCreateAssignmentOmitsOptionalFields() async throws {
+        let transport = StubTransport()
+        await transport.on("/courses/101/assignments", method: "POST", json: Fixtures.assignmentCreated)
+        let client = CanvasClient.stubbed(transport)
+
+        _ = try await client.createAssignment(
+            courseID: 101,
+            assignment: AssignmentCreate(name: "Value Study")
+        )
+
+        let recorded = await transport.recorded
+        let request = try XCTUnwrap(recorded.first)
+        let bodyData = try XCTUnwrap(request.body)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
+        let payload = try XCTUnwrap(object["assignment"] as? [String: Any])
+        XCTAssertEqual(payload.count, 1)
+        XCTAssertEqual(payload["name"] as? String, "Value Study")
+        XCTAssertNil(payload["description"])
+        XCTAssertNil(payload["published"])
+        XCTAssertNil(payload["points_possible"])
+        XCTAssertNil(payload["due_at"])
+        XCTAssertNil(payload["unlock_at"])
+        XCTAssertNil(payload["lock_at"])
+    }
+
     func testUpdateAssignmentSendsOnlyProvidedFields() async throws {
         let transport = StubTransport()
         await transport.on("/courses/101/assignments/501", method: "PUT", json: Fixtures.assignmentUpdated)
@@ -85,5 +149,24 @@ final class AssignmentsTests: XCTestCase {
         XCTAssertEqual(payload["unlock_at"] as? String, "2026-08-24T00:00:00-05:00")
         XCTAssertEqual(payload["lock_at"] as? String, "2026-09-13T23:59:00-05:00")
         XCTAssertNil(payload["name"])
+    }
+
+    func testDeleteAssignmentUsesDeleteWithoutBodyAndDecodesResponse() async throws {
+        let transport = StubTransport()
+        await transport.on("/courses/101/assignments/502", method: "DELETE", json: Fixtures.assignmentDeleted)
+        let client = CanvasClient.stubbed(transport)
+
+        let assignment = try await client.deleteAssignment(courseID: 101, id: 502)
+
+        XCTAssertEqual(assignment.id, 502)
+        XCTAssertEqual(assignment.name, "Gesture Studies")
+        XCTAssertEqual(assignment.description, "<p>Complete ten gesture drawings.</p>")
+        XCTAssertEqual(assignment.published, false)
+
+        let recorded = await transport.recorded
+        let request = try XCTUnwrap(recorded.first)
+        XCTAssertEqual(request.method, "DELETE")
+        XCTAssertEqual(request.url.path, "/api/v1/courses/101/assignments/502")
+        XCTAssertNil(request.body)
     }
 }

@@ -15,9 +15,22 @@ public extension CanvasClient {
         try await api.get("courses/\(courseID)/assignments/\(id)")
     }
 
+    /// Creates an assignment. Canvas requires the assignment's name.
+    func createAssignment(courseID: Int, assignment: AssignmentCreate) async throws -> Assignment {
+        try await api.post(
+            "courses/\(courseID)/assignments",
+            body: AssignmentCreateBody(assignment: assignment)
+        )
+    }
+
     /// Updates an assignment's name, description, published state, points,
     /// and/or due date.
     func updateAssignment(courseID: Int, id: Int, update: AssignmentUpdate) async throws -> Assignment {
         try await api.put("courses/\(courseID)/assignments/\(id)", body: AssignmentUpdateBody(assignment: update))
+    }
+
+    /// Deletes an assignment and returns the deleted assignment Canvas reports.
+    func deleteAssignment(courseID: Int, id: Int) async throws -> Assignment {
+        try await api.delete("courses/\(courseID)/assignments/\(id)")
     }
 }

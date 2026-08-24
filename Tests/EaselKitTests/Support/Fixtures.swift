@@ -173,6 +173,22 @@ enum Fixtures {
     }
     """
 
+    static let assignmentCreated = """
+    {
+      "id": 503,
+      "name": "Value Study",
+      "description": "<p>Paint a grayscale still life.</p>",
+      "due_at": "2026-09-20T04:59:59Z",
+      "unlock_at": "2026-09-01T05:00:00Z",
+      "lock_at": "2026-09-22T04:59:59Z",
+      "points_possible": 75.0,
+      "published": false,
+      "html_url": "https://example.instructure.com/courses/101/assignments/503",
+      "course_id": 101,
+      "grading_type": "points"
+    }
+    """
+
     static let assignmentUpdated = """
     {
       "id": 501,
@@ -181,6 +197,18 @@ enum Fixtures {
       "due_at": "2026-09-12T04:59:59Z",
       "points_possible": 120.0,
       "published": true,
+      "course_id": 101
+    }
+    """
+
+    static let assignmentDeleted = """
+    {
+      "id": 502,
+      "name": "Gesture Studies",
+      "description": "<p>Complete ten gesture drawings.</p>",
+      "due_at": null,
+      "points_possible": 50.0,
+      "published": false,
       "course_id": 101
     }
     """
