@@ -150,6 +150,7 @@ final class PagesTests: XCTestCase {
         let recorded = await transport.recorded
         let request = try XCTUnwrap(recorded.first)
         XCTAssertEqual(request.method, "DELETE")
+        XCTAssertEqual(request.url.path, "/api/v1/courses/101/pages/week-2-materials")
         XCTAssertNil(request.body)
     }
 }
