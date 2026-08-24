@@ -80,6 +80,22 @@ enum Fixtures {
     }
     """
 
+    static let pageCreated = """
+    {
+      "page_id": 13,
+      "url": "week-2-materials",
+      "title": "Week 2 Materials",
+      "body": "<h2>Week 2</h2><p>Read before class.</p>",
+      "published": false,
+      "publish_at": "2026-08-31T13:00:00Z",
+      "front_page": false,
+      "editing_roles": "teachers,students",
+      "locked_for_user": false,
+      "created_at": "2026-08-23T15:00:00Z",
+      "updated_at": "2026-08-23T15:00:00Z"
+    }
+    """
+
     static let pageUpdated = """
     {
       "page_id": 11,
@@ -157,6 +173,22 @@ enum Fixtures {
     }
     """
 
+    static let assignmentCreated = """
+    {
+      "id": 503,
+      "name": "Value Study",
+      "description": "<p>Paint a grayscale still life.</p>",
+      "due_at": "2026-09-20T04:59:59Z",
+      "unlock_at": "2026-09-01T05:00:00Z",
+      "lock_at": "2026-09-22T04:59:59Z",
+      "points_possible": 75.0,
+      "published": false,
+      "html_url": "https://example.instructure.com/courses/101/assignments/503",
+      "course_id": 101,
+      "grading_type": "points"
+    }
+    """
+
     static let assignmentUpdated = """
     {
       "id": 501,
@@ -165,6 +197,18 @@ enum Fixtures {
       "due_at": "2026-09-12T04:59:59Z",
       "points_possible": 120.0,
       "published": true,
+      "course_id": 101
+    }
+    """
+
+    static let assignmentDeleted = """
+    {
+      "id": 502,
+      "name": "Gesture Studies",
+      "description": "<p>Complete ten gesture drawings.</p>",
+      "due_at": null,
+      "points_possible": 50.0,
+      "published": false,
       "course_id": 101
     }
     """
@@ -288,6 +332,67 @@ enum Fixtures {
         "purpose": "grading",
         "hide_score_total": false
       }
+    }
+    """
+
+    static let rubricUpdateResponse = """
+    {
+      "rubric": {
+        "id": 9,
+        "title": "Essay Rubric",
+        "context_id": 101,
+        "context_type": "Course",
+        "points_possible": 15.0,
+        "free_form_criterion_comments": false,
+        "data": [
+          {
+            "id": "_1",
+            "description": "Thesis",
+            "long_description": "A clear, arguable thesis.",
+            "points": 5.0,
+            "ratings": [
+              { "id": "_2", "description": "Excellent", "points": 5.0 },
+              { "id": "_3", "description": "Adequate", "points": 3.0 },
+              { "id": "_4", "description": "Missing", "points": 0.0 }
+            ]
+          },
+          {
+            "id": "_5",
+            "description": "Evidence",
+            "points": 10.0,
+            "ratings": [
+              { "id": "_6", "description": "Strong", "points": 10.0 },
+              { "id": "_7", "description": "Weak", "points": 4.0 }
+            ]
+          }
+        ]
+      },
+      "rubric_association": null
+    }
+    """
+
+    static let rubricDeleteResponse = """
+    {
+      "id": 9,
+      "title": "Portrait Rubric",
+      "context_id": 101,
+      "context_type": "Course",
+      "points_possible": 100.0,
+      "free_form_criterion_comments": false,
+      "read_only": false,
+      "reusable": false,
+      "data": [
+        {
+          "id": "_10",
+          "description": "Likeness",
+          "points": 60.0,
+          "criterion_use_range": false,
+          "ratings": [
+            { "id": "_11", "description": "Strong", "points": 60.0 },
+            { "id": "_12", "description": "Developing", "points": 30.0 }
+          ]
+        }
+      ]
     }
     """
 

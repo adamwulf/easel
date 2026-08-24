@@ -6,7 +6,7 @@ import XCTest
 /// or an API key.
 final class ParsingTests: XCTestCase {
     func testRootListsAllSubcommands() {
-        XCTAssertEqual(Easel.configuration.subcommands.count, 12)
+        XCTAssertEqual(Easel.configuration.subcommands.count, 17)
     }
 
     func testCoursesParses() throws {
@@ -44,6 +44,49 @@ final class ParsingTests: XCTestCase {
         XCTAssertEqual(command.urlOrID, "course-syllabus")
     }
 
+    func testCreatePageRequiresTitle() {
+        XCTAssertThrowsError(try CreatePageCommand.parse(["101"]))
+    }
+
+    func testCreatePageParsesAllFields() throws {
+        let command = try CreatePageCommand.parse([
+            "101",
+            "--title", "Week 2 Materials",
+            "--body-file", "week-2.html",
+            "--editing-roles", "teachers,students",
+            "--notify-of-update", "true",
+            "--published", "false",
+            "--front-page", "true",
+            "--publish-at", "2026-08-31T08:00:00-05:00",
+        ])
+        XCTAssertEqual(command.courseID, 101)
+        XCTAssertEqual(command.title, "Week 2 Materials")
+        XCTAssertEqual(command.bodyFile, "week-2.html")
+        XCTAssertEqual(command.editingRoles, "teachers,students")
+        XCTAssertEqual(command.notifyOfUpdate, true)
+        XCTAssertEqual(command.published, false)
+        XCTAssertEqual(command.frontPage, true)
+        XCTAssertEqual(command.publishAt, "2026-08-31T08:00:00-05:00")
+    }
+
+    func testCreatePageRejectsBodyAndBodyFileTogether() {
+        XCTAssertThrowsError(
+            try CreatePageCommand.parse(["101", "--title", "Week 2", "--body", "<p>x</p>", "--body-file", "x.html"])
+        )
+    }
+
+    func testCreatePageRejectsDateWithoutTimeZone() {
+        XCTAssertThrowsError(
+            try CreatePageCommand.parse(["101", "--title", "Week 2", "--publish-at", "2026-08-31T08:00:00"])
+        )
+    }
+
+    func testDeletePageParsesCourseAndSlug() throws {
+        let command = try DeletePageCommand.parse(["101", "week-2-materials"])
+        XCTAssertEqual(command.courseID, 101)
+        XCTAssertEqual(command.urlOrID, "week-2-materials")
+    }
+
     func testUpdatePageRequiresAChange() {
         XCTAssertThrowsError(try UpdatePageCommand.parse(["101", "home"]))
     }
@@ -63,6 +106,53 @@ final class ParsingTests: XCTestCase {
 
     func testUpdateAssignmentRequiresAChange() {
         XCTAssertThrowsError(try UpdateAssignmentCommand.parse(["101", "501"]))
+    }
+
+    func testCreateAssignmentRequiresName() {
+        XCTAssertThrowsError(try CreateAssignmentCommand.parse(["101"]))
+    }
+
+    func testCreateAssignmentParsesContentPointsAndDates() throws {
+        let command = try CreateAssignmentCommand.parse([
+            "101",
+            "--name", "Value Study",
+            "--description-file", "value-study.html",
+            "--points", "75",
+            "--published", "false",
+            "--due-at", "2026-09-19T23:59:59-05:00",
+            "--unlock-at", "2026-09-01T00:00:00-05:00",
+            "--lock-at", "2026-09-21T23:59:59-05:00",
+        ])
+        XCTAssertEqual(command.courseID, 101)
+        XCTAssertEqual(command.name, "Value Study")
+        XCTAssertEqual(command.descriptionFile, "value-study.html")
+        XCTAssertEqual(command.points, 75)
+        XCTAssertEqual(command.published, false)
+        XCTAssertEqual(command.dueAt, "2026-09-19T23:59:59-05:00")
+        XCTAssertEqual(command.unlockAt, "2026-09-01T00:00:00-05:00")
+        XCTAssertEqual(command.lockAt, "2026-09-21T23:59:59-05:00")
+    }
+
+    func testCreateAssignmentRejectsDescriptionAndFileTogether() {
+        XCTAssertThrowsError(
+            try CreateAssignmentCommand.parse([
+                "101", "--name", "Value Study", "--description", "<p>x</p>", "--description-file", "x.html",
+            ])
+        )
+    }
+
+    func testCreateAssignmentRejectsDateWithoutTimeZone() {
+        XCTAssertThrowsError(
+            try CreateAssignmentCommand.parse([
+                "101", "--name", "Value Study", "--due-at", "2026-09-19T23:59:59",
+            ])
+        )
+    }
+
+    func testDeleteAssignmentParsesCourseAndID() throws {
+        let command = try DeleteAssignmentCommand.parse(["101", "502"])
+        XCTAssertEqual(command.courseID, 101)
+        XCTAssertEqual(command.assignmentID, 502)
     }
 
     func testUpdateAssignmentParsesPointsAndDueAt() throws {
@@ -135,5 +225,11 @@ final class ParsingTests: XCTestCase {
         XCTAssertEqual(command.rubricID, 9)
         XCTAssertNil(command.assignment)
         XCTAssertTrue(command.useForGrading)
+    }
+
+    func testDeleteRubricParsesCourseAndID() throws {
+        let command = try DeleteRubricCommand.parse(["101", "9"])
+        XCTAssertEqual(command.courseID, 101)
+        XCTAssertEqual(command.rubricID, 9)
     }
 }

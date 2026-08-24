@@ -100,6 +100,49 @@ public struct RubricSettings: Codable, Sendable, Equatable {
     }
 }
 
+/// The fields used to create an assignment. Canvas requires `name`; nil
+/// optional fields are omitted from the request.
+public struct AssignmentCreate: Encodable, Sendable, Equatable {
+    public let name: String
+    public let description: String?
+    public let published: Bool?
+    public let pointsPossible: Double?
+    /// ISO 8601 with a time zone, passed through verbatim.
+    public let dueAt: String?
+    /// ISO 8601 with a time zone; the date the assignment becomes available.
+    public let unlockAt: String?
+    /// ISO 8601 with a time zone; the date the assignment locks.
+    public let lockAt: String?
+
+    public init(
+        name: String,
+        description: String? = nil,
+        published: Bool? = nil,
+        pointsPossible: Double? = nil,
+        dueAt: String? = nil,
+        unlockAt: String? = nil,
+        lockAt: String? = nil
+    ) {
+        self.name = name
+        self.description = description
+        self.published = published
+        self.pointsPossible = pointsPossible
+        self.dueAt = dueAt
+        self.unlockAt = unlockAt
+        self.lockAt = lockAt
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case description
+        case published
+        case pointsPossible = "points_possible"
+        case dueAt = "due_at"
+        case unlockAt = "unlock_at"
+        case lockAt = "lock_at"
+    }
+}
+
 /// The fields that can change on an assignment. Nil fields are omitted from
 /// the request, so Canvas leaves them untouched.
 public struct AssignmentUpdate: Encodable, Sendable, Equatable {
@@ -141,6 +184,10 @@ public struct AssignmentUpdate: Encodable, Sendable, Equatable {
         case unlockAt = "unlock_at"
         case lockAt = "lock_at"
     }
+}
+
+struct AssignmentCreateBody: Encodable, Sendable {
+    let assignment: AssignmentCreate
 }
 
 struct AssignmentUpdateBody: Encodable, Sendable {

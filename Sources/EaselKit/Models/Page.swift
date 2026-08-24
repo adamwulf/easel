@@ -62,6 +62,49 @@ public struct Page: Codable, Sendable, Equatable, CanvasRow {
     }
 }
 
+/// The fields used to create a page. Canvas requires a title; nil optional
+/// fields are omitted so Canvas can apply its course defaults.
+public struct PageCreate: Encodable, Sendable, Equatable {
+    public let title: String
+    public let body: String?
+    public let editingRoles: String?
+    public let notifyOfUpdate: Bool?
+    public let published: Bool?
+    public let frontPage: Bool?
+    /// ISO 8601 with a time zone; schedules a future publication date. Only
+    /// takes effect when the Canvas account has the Scheduled Page Publication
+    /// feature enabled.
+    public let publishAt: String?
+
+    public init(
+        title: String,
+        body: String? = nil,
+        editingRoles: String? = nil,
+        notifyOfUpdate: Bool? = nil,
+        published: Bool? = nil,
+        frontPage: Bool? = nil,
+        publishAt: String? = nil
+    ) {
+        self.title = title
+        self.body = body
+        self.editingRoles = editingRoles
+        self.notifyOfUpdate = notifyOfUpdate
+        self.published = published
+        self.frontPage = frontPage
+        self.publishAt = publishAt
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case body
+        case editingRoles = "editing_roles"
+        case notifyOfUpdate = "notify_of_update"
+        case published
+        case frontPage = "front_page"
+        case publishAt = "publish_at"
+    }
+}
+
 /// The fields that can change on a page. Nil fields are omitted from the
 /// request, so Canvas leaves them untouched.
 public struct PageUpdate: Encodable, Sendable, Equatable {
@@ -85,6 +128,14 @@ public struct PageUpdate: Encodable, Sendable, Equatable {
         case body
         case published
         case publishAt = "publish_at"
+    }
+}
+
+struct PageCreateBody: Encodable, Sendable {
+    let wikiPage: PageCreate
+
+    enum CodingKeys: String, CodingKey {
+        case wikiPage = "wiki_page"
     }
 }
 

@@ -34,4 +34,9 @@ public extension CanvasClient {
         let data = try await api.sendJSON(method: "PUT", path: "courses/\(courseID)/rubrics/\(id)", body: body)
         return try RubricResult.decode(from: data)
     }
+
+    /// Deletes a rubric and all of its associations.
+    func deleteRubric(courseID: Int, id: Int) async throws -> Rubric {
+        try await api.delete("courses/\(courseID)/rubrics/\(id)")
+    }
 }

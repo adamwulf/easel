@@ -1,3 +1,5 @@
 .env
 .build
 DerivedData
+AGENTS.md
+.codex/
