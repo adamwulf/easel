@@ -45,6 +45,57 @@ final class PagesTests: XCTestCase {
         XCTAssertEqual(page.body, "<h2>Welcome</h2><p>Bring a sketchbook to every class.</p>")
     }
 
+    func testCreatePageSendsAllProvidedFields() async throws {
+        let transport = StubTransport()
+        await transport.on("/courses/101/pages", method: "POST", json: Fixtures.pageCreated)
+        let client = CanvasClient.stubbed(transport)
+
+        let draft = PageCreate(
+            title: "Week 2 Materials",
+            body: "<h2>Week 2</h2><p>Read before class.</p>",
+            editingRoles: "teachers,students",
+            notifyOfUpdate: true,
+            published: true,
+            frontPage: false,
+            publishAt: "2026-08-31T08:00:00-05:00"
+        )
+        let page = try await client.createPage(courseID: 101, page: draft)
+
+        XCTAssertEqual(page.pageID, 13)
+        XCTAssertEqual(page.url, "week-2-materials")
+
+        let recorded = await transport.recorded
+        let request = try XCTUnwrap(recorded.first)
+        XCTAssertEqual(request.method, "POST")
+        XCTAssertEqual(request.headers["Content-Type"], "application/json")
+        let bodyData = try XCTUnwrap(request.body)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
+        let wikiPage = try XCTUnwrap(object["wiki_page"] as? [String: Any])
+        XCTAssertEqual(wikiPage["title"] as? String, "Week 2 Materials")
+        XCTAssertEqual(wikiPage["body"] as? String, "<h2>Week 2</h2><p>Read before class.</p>")
+        XCTAssertEqual(wikiPage["editing_roles"] as? String, "teachers,students")
+        XCTAssertEqual(wikiPage["notify_of_update"] as? Bool, true)
+        XCTAssertEqual(wikiPage["published"] as? Bool, true)
+        XCTAssertEqual(wikiPage["front_page"] as? Bool, false)
+        XCTAssertEqual(wikiPage["publish_at"] as? String, "2026-08-31T08:00:00-05:00")
+    }
+
+    func testCreatePageOmitsOptionalFields() async throws {
+        let transport = StubTransport()
+        await transport.on("/courses/101/pages", method: "POST", json: Fixtures.pageCreated)
+        let client = CanvasClient.stubbed(transport)
+
+        _ = try await client.createPage(courseID: 101, page: PageCreate(title: "Week 2 Materials"))
+
+        let recorded = await transport.recorded
+        let request = try XCTUnwrap(recorded.first)
+        let bodyData = try XCTUnwrap(request.body)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
+        let wikiPage = try XCTUnwrap(object["wiki_page"] as? [String: Any])
+        XCTAssertEqual(wikiPage.count, 1)
+        XCTAssertEqual(wikiPage["title"] as? String, "Week 2 Materials")
+    }
+
     func testUpdatePageSendsOnlyProvidedFields() async throws {
         let transport = StubTransport()
         await transport.on("/courses/101/pages/course-syllabus", method: "PUT", json: Fixtures.pageUpdated)
@@ -84,5 +135,20 @@ final class PagesTests: XCTestCase {
         XCTAssertEqual(wikiPage["publish_at"] as? String, "2026-08-24T08:00:00-05:00")
         XCTAssertNil(wikiPage["title"])
         XCTAssertNil(wikiPage["body"])
+    }
+
+    func testDeletePageUsesDeleteAndReturnsPage() async throws {
+        let transport = StubTransport()
+        await transport.on("/courses/101/pages/week-2-materials", method: "DELETE", json: Fixtures.pageCreated)
+        let client = CanvasClient.stubbed(transport)
+
+        let page = try await client.deletePage(courseID: 101, urlOrID: "week-2-materials")
+
+        XCTAssertEqual(page.pageID, 13)
+        XCTAssertEqual(page.url, "week-2-materials")
+        let recorded = await transport.recorded
+        let request = try XCTUnwrap(recorded.first)
+        XCTAssertEqual(request.method, "DELETE")
+        XCTAssertNil(request.body)
     }
 }

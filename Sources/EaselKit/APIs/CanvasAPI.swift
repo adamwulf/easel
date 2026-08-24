@@ -65,6 +65,13 @@ public struct CanvasAPI: Sendable {
         return try decode(data)
     }
 
+    public func delete<T: Decodable & Sendable>(_ path: String) async throws -> T {
+        let response = try await send(
+            HTTPRequest(method: "DELETE", url: try makeURL(path: path, query: []), headers: baseHeaders())
+        )
+        return try decode(response.body)
+    }
+
     /// Sends a JSON body and returns the raw response data, for callers that
     /// need custom decoding.
     public func sendJSON<Body: Encodable & Sendable>(method: String, path: String, body: Body) async throws -> Data {

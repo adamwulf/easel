@@ -17,8 +17,18 @@ public extension CanvasClient {
         try await api.get("courses/\(courseID)/pages/\(urlOrID)")
     }
 
+    /// Creates a page. Canvas generates its url slug from the required title.
+    func createPage(courseID: Int, page: PageCreate) async throws -> Page {
+        try await api.post("courses/\(courseID)/pages", body: PageCreateBody(wikiPage: page))
+    }
+
     /// Updates a page's title, body, and/or published state.
     func updatePage(courseID: Int, urlOrID: String, update: PageUpdate) async throws -> Page {
         try await api.put("courses/\(courseID)/pages/\(urlOrID)", body: PageUpdateBody(wikiPage: update))
+    }
+
+    /// Deletes a page and returns the deleted page Canvas reports.
+    func deletePage(courseID: Int, urlOrID: String) async throws -> Page {
+        try await api.delete("courses/\(courseID)/pages/\(urlOrID)")
     }
 }

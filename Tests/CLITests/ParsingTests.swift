@@ -6,7 +6,7 @@ import XCTest
 /// or an API key.
 final class ParsingTests: XCTestCase {
     func testRootListsAllSubcommands() {
-        XCTAssertEqual(Easel.configuration.subcommands.count, 12)
+        XCTAssertEqual(Easel.configuration.subcommands.count, 14)
     }
 
     func testCoursesParses() throws {
@@ -42,6 +42,49 @@ final class ParsingTests: XCTestCase {
         let command = try PageCommand.parse(["101", "course-syllabus"])
         XCTAssertEqual(command.courseID, 101)
         XCTAssertEqual(command.urlOrID, "course-syllabus")
+    }
+
+    func testCreatePageRequiresTitle() {
+        XCTAssertThrowsError(try CreatePageCommand.parse(["101"]))
+    }
+
+    func testCreatePageParsesAllFields() throws {
+        let command = try CreatePageCommand.parse([
+            "101",
+            "--title", "Week 2 Materials",
+            "--body-file", "week-2.html",
+            "--editing-roles", "teachers,students",
+            "--notify-of-update", "true",
+            "--published", "false",
+            "--front-page", "true",
+            "--publish-at", "2026-08-31T08:00:00-05:00",
+        ])
+        XCTAssertEqual(command.courseID, 101)
+        XCTAssertEqual(command.title, "Week 2 Materials")
+        XCTAssertEqual(command.bodyFile, "week-2.html")
+        XCTAssertEqual(command.editingRoles, "teachers,students")
+        XCTAssertEqual(command.notifyOfUpdate, true)
+        XCTAssertEqual(command.published, false)
+        XCTAssertEqual(command.frontPage, true)
+        XCTAssertEqual(command.publishAt, "2026-08-31T08:00:00-05:00")
+    }
+
+    func testCreatePageRejectsBodyAndBodyFileTogether() {
+        XCTAssertThrowsError(
+            try CreatePageCommand.parse(["101", "--title", "Week 2", "--body", "<p>x</p>", "--body-file", "x.html"])
+        )
+    }
+
+    func testCreatePageRejectsDateWithoutTimeZone() {
+        XCTAssertThrowsError(
+            try CreatePageCommand.parse(["101", "--title", "Week 2", "--publish-at", "2026-08-31T08:00:00"])
+        )
+    }
+
+    func testDeletePageParsesCourseAndSlug() throws {
+        let command = try DeletePageCommand.parse(["101", "week-2-materials"])
+        XCTAssertEqual(command.courseID, 101)
+        XCTAssertEqual(command.urlOrID, "week-2-materials")
     }
 
     func testUpdatePageRequiresAChange() {

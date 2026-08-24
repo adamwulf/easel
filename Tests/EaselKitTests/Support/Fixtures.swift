@@ -80,6 +80,22 @@ enum Fixtures {
     }
     """
 
+    static let pageCreated = """
+    {
+      "page_id": 13,
+      "url": "week-2-materials",
+      "title": "Week 2 Materials",
+      "body": "<h2>Week 2</h2><p>Read before class.</p>",
+      "published": false,
+      "publish_at": "2026-08-31T13:00:00Z",
+      "front_page": false,
+      "editing_roles": "teachers,students",
+      "locked_for_user": false,
+      "created_at": "2026-08-23T15:00:00Z",
+      "updated_at": "2026-08-23T15:00:00Z"
+    }
+    """
+
     static let pageUpdated = """
     {
       "page_id": 11,
