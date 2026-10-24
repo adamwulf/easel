@@ -308,6 +308,7 @@ enum Fixtures {
         "excused": false,
         "late": false,
         "missing": true,
+        "late_policy_status": "missing",
         "user": {
           "id": 9005,
           "name": "Morgan Diaz",
@@ -330,6 +331,8 @@ enum Fixtures {
         "excused": false,
         "late": true,
         "missing": false,
+        "late_policy_status": "late",
+        "seconds_late": 86400,
         "user": {
           "id": 9006,
           "name": "Casey Kim",

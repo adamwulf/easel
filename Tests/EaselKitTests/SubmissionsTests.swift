@@ -155,6 +155,10 @@ final class SubmissionsTests: XCTestCase {
         let json = try OutputFormatter.render(submissions, format: .json)
         let decoded = try CanvasJSON.makeDecoder().decode([Submission].self, from: Data(json.utf8))
         XCTAssertEqual(decoded, submissions)
+        // Every Canvas field the encoder writes has a non-nil value in some
+        // row, so a dropped or mis-keyed line fails the round trip above.
+        XCTAssertEqual(decoded[4].latePolicyStatus, "late")
+        XCTAssertEqual(decoded[4].secondsLate, 86400)
         // Nil fields stay omitted, as synthesized encoding does.
         let placeholder = try OutputFormatter.render(submissions[1], format: .jsonl)
         XCTAssertFalse(placeholder.contains("submitted_at"))
