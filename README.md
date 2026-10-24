@@ -249,7 +249,7 @@ swift build          # build
 swift test           # run all tests (offline; no API key needed)
 ```
 
-See `CLAUDE.md` for the architecture and how to add new endpoints.
+See `AGENTS.md` for the architecture and how to add new endpoints.
 
 ## References
 
