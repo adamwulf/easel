@@ -292,6 +292,50 @@ enum Fixtures {
           "sortable_name": "Patel, Priya",
           "login_id": "ppatel"
         }
+      },
+      {
+        "id": 7004,
+        "user_id": 9005,
+        "assignment_id": 501,
+        "workflow_state": "graded",
+        "submission_type": null,
+        "attempt": null,
+        "submitted_at": null,
+        "graded_at": "2026-09-08T15:10:00Z",
+        "score": 0.0,
+        "grade": "0",
+        "grade_matches_current_submission": true,
+        "excused": false,
+        "late": false,
+        "missing": true,
+        "user": {
+          "id": 9005,
+          "name": "Morgan Diaz",
+          "sortable_name": "Diaz, Morgan",
+          "login_id": "mdiaz"
+        }
+      },
+      {
+        "id": 7005,
+        "user_id": 9006,
+        "assignment_id": 502,
+        "workflow_state": "submitted",
+        "submission_type": "online_text_entry",
+        "attempt": 2,
+        "submitted_at": "2026-09-10T18:30:00Z",
+        "graded_at": "2026-09-09T15:00:00Z",
+        "score": 40.0,
+        "grade": "40",
+        "grade_matches_current_submission": false,
+        "excused": false,
+        "late": true,
+        "missing": false,
+        "user": {
+          "id": 9006,
+          "name": "Casey Kim",
+          "sortable_name": "Kim, Casey",
+          "login_id": "ckim"
+        }
       }
     ]
     """

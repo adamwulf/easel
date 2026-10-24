@@ -8,11 +8,13 @@ public extension CanvasClient {
     ///   - assignmentIDs: Only submissions for these assignments; empty means
     ///     every published assignment in the course. Canvas answers 403
     ///     ("invalid assignment ids requested") for an unpublished id.
-    ///   - state: Only submissions in this workflow state; nil means all states.
+    ///   - status: Only submissions with this easel status; nil means all.
+    ///     No Canvas `workflow_state` matches a status (a `graded` row can be
+    ///     not submitted), so this fetches every state and filters here.
     func submissions(
         courseID: Int,
         assignmentIDs: [Int] = [],
-        state: SubmissionState? = nil
+        status: SubmissionStatus? = nil
     ) async throws -> [Submission] {
         var query = [
             URLQueryItem(name: "student_ids[]", value: "all"),
@@ -22,9 +24,8 @@ public extension CanvasClient {
         for assignmentID in assignmentIDs {
             query.append(URLQueryItem(name: "assignment_ids[]", value: String(assignmentID)))
         }
-        if let state {
-            query.append(URLQueryItem(name: "workflow_state", value: state.rawValue))
-        }
-        return try await fetchAll("courses/\(courseID)/students/submissions", query: query)
+        let submissions: [Submission] = try await fetchAll("courses/\(courseID)/students/submissions", query: query)
+        guard let status else { return submissions }
+        return submissions.filter { $0.status == status }
     }
 }

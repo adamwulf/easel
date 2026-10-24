@@ -2,10 +2,9 @@ import Foundation
 
 /// One student's submission for one assignment. Canvas keeps a submission for
 /// every student an assignment is assigned to, so a list covers the whole
-/// roster. A student hasn't turned it in when `submittedAt` is nil (and they
-/// aren't excused), whatever the state: grading missing work marks it `graded`.
-/// `user` appears when the request asks for it via `include[]` (the client
-/// does by default).
+/// roster. `status` reduces Canvas's fields to what a teacher means by "not
+/// turned in" or "needs grading". `user` appears when the request asks for it
+/// via `include[]` (the client does by default).
 public struct Submission: Codable, Sendable, Equatable, CanvasRow {
     public let id: Int
     public let userID: Int
@@ -60,6 +59,35 @@ public struct Submission: Codable, Sendable, Equatable, CanvasRow {
     /// submission within an assignment.
     public var rowID: String {
         String(userID)
+    }
+
+    /// The submission's easel status. Every submission has exactly one,
+    /// checked in this order: excused, then not submitted (no `submittedAt`,
+    /// even when the missing work has a grade), then needs grading, else
+    /// graded.
+    public var status: SubmissionStatus {
+        if excused == true { return .excused }
+        if submittedAt == nil { return .notSubmitted }
+        if needsGrading { return .needsGrading }
+        return .graded
+    }
+
+    /// Canvas's needs-grading rule (`Submission.needs_grading_conditions`, the
+    /// one behind an assignment's `needs_grading_count`), minus the excused
+    /// check that `status` makes first. A resubmission after grading is
+    /// `submitted` with the old score and a false
+    /// `gradeMatchesCurrentSubmission`; a cleared grade stays `graded` with a
+    /// nil score.
+    private var needsGrading: Bool {
+        guard submissionType != nil else { return false }
+        switch workflowState {
+        case "pending_review":
+            return true
+        case "submitted", "graded":
+            return score == nil || gradeMatchesCurrentSubmission == false
+        default:
+            return false
+        }
     }
 
     public var summaryRow: SummaryRow {
@@ -130,11 +158,17 @@ public struct Submission: Codable, Sendable, Equatable, CanvasRow {
     }
 }
 
-/// A submission's Canvas workflow state, used to filter a submissions list.
-/// Raw values match the Canvas `workflow_state` parameter.
-public enum SubmissionState: String, Sendable, CaseIterable {
-    case submitted
-    case unsubmitted
+/// easel's own submission status, derived from Canvas's fields by
+/// `Submission.status`. Canvas's `workflow_state` can't answer "who hasn't
+/// turned it in": grading missing work (a teacher's 0, or the late policy)
+/// marks it `graded`, and so does excusing a student.
+public enum SubmissionStatus: String, Sendable, CaseIterable {
+    /// Not turned in: no `submitted_at`, and not excused.
+    case notSubmitted = "not-submitted"
+    /// Turned in and waiting on a grade, by Canvas's needs-grading rule.
+    case needsGrading = "needs-grading"
+    /// Turned in and graded for the current attempt.
     case graded
-    case pendingReview = "pending_review"
+    /// Excused from the assignment, whether or not anything was turned in.
+    case excused
 }

@@ -193,11 +193,17 @@ final class ParsingTests: XCTestCase {
 
     func testSubmissionsParsesAssignmentsAndState() throws {
         let command = try SubmissionsCommand.parse(
-            ["101", "--assignment", "501", "--assignment", "502", "--state", "pending_review"]
+            ["101", "--assignment", "501", "--assignment", "502", "--state", "not-submitted"]
         )
         XCTAssertEqual(command.courseID, 101)
         XCTAssertEqual(command.assignment, [501, 502])
-        XCTAssertEqual(command.state, .pendingReview)
+        XCTAssertEqual(command.state, .notSubmitted)
+    }
+
+    func testSubmissionsParsesEveryStatus() throws {
+        let values = ["not-submitted", "needs-grading", "graded", "excused"]
+        let parsed = try values.map { try SubmissionsCommand.parse(["101", "--state", $0]).state }
+        XCTAssertEqual(parsed, [.notSubmitted, .needsGrading, .graded, .excused])
     }
 
     func testSubmissionsDefaultsToAllAssignmentsAndStates() throws {
@@ -208,7 +214,10 @@ final class ParsingTests: XCTestCase {
 
     func testSubmissionsRejectsUnknownState() {
         // A typo must fail, not silently fall back to every state.
-        XCTAssertThrowsError(try SubmissionsCommand.parse(["101", "--state", "excused"]))
+        XCTAssertThrowsError(try SubmissionsCommand.parse(["101", "--state", "not-submited"]))
+        // Canvas's raw workflow states aren't easel statuses.
+        XCTAssertThrowsError(try SubmissionsCommand.parse(["101", "--state", "unsubmitted"]))
+        XCTAssertThrowsError(try SubmissionsCommand.parse(["101", "--state", "pending_review"]))
     }
 
     func testUsersParsesEnrollmentType() throws {

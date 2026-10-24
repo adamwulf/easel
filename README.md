@@ -125,21 +125,25 @@ easel rejects values without a time zone before sending anything, because Canvas
 ### Submissions
 
 ```bash
-easel submissions 101                                      # every published assignment, every state
-easel submissions 101 --assignment 501 --format smalljsonl # then keep rows with no submitted_at, not excused
-easel submissions 101 --assignment 501 --state unsubmitted # not turned in and not graded yet
-easel submissions 101 --assignment 501 --assignment 502    # repeat --assignment for more
-easel submissions 101 --state pending_review               # e.g. quizzes waiting on manual grading
-easel submissions 101 --assignment 501 --format id         # student user ids
+easel submissions 101                                        # every published assignment, every status
+easel submissions 101 --assignment 501 --state not-submitted # who has not turned in 501
+easel submissions 101 --state needs-grading --format smalljsonl  # ungraded work; group by assignment_id
+easel submissions 101 --assignment 501 --assignment 502      # repeat --assignment for more
+easel submissions 101 --assignment 501 --state not-submitted --format id  # just their user ids
 ```
 
-Each row is one active student's submission for one published assignment; students with concluded or inactive enrollments are left out. Unpublished assignments have no student submissions, and Canvas answers `--assignment` with an unpublished id with a 403 ("invalid assignment ids requested"). Canvas keeps a submission row for every student an assignment is assigned to, turned in or not. `--state` takes the Canvas `workflow_state` values `submitted`, `unsubmitted`, `graded`, or `pending_review`; omit it for all states.
+Each row is one active student's submission for one published assignment; students with concluded or inactive enrollments are left out. Canvas keeps a submission row for every student an assignment is assigned to, turned in or not. Unpublished assignments have no student submissions, and Canvas answers `--assignment` with an unpublished id with a 403 ("invalid assignment ids requested").
 
-To list every student who has not turned an assignment in, fetch all states and keep the rows where `submitted_at` is null and `excused` is not true. `--state unsubmitted` alone is not enough: it shows only students with no submission *and* no grade. When a teacher enters a 0 for missing work, or the course's late policy grades missing submissions automatically, Canvas marks the row `graded` while `submitted_at` stays null.
+`--state` filters by easel's own status, not Canvas's `workflow_state`, because no `workflow_state` answers "who hasn't turned it in": Canvas marks missing work `graded` once a teacher enters a 0 or the late policy grades it automatically, and it marks excused students `graded` too. Every submission has exactly one status, checked in this order:
 
-`excused` is a flag, not a state: Canvas marks an excused submission `graded`, with `"excused": true` and a null `score` and `grade`. So `--state unsubmitted` already leaves excused students out, but `--state graded` includes them — filter on `excused` when it matters.
+| `--state` | Meaning (Canvas fields) |
+| --- | --- |
+| `excused` | `excused` is true, whatever else is set. |
+| `not-submitted` | `submitted_at` is null — nothing turned in, even if the missing work has a grade. |
+| `needs-grading` | Canvas's own rule, the one behind its "needs grading" count: `submission_type` is set, and `workflow_state` is `pending_review`, or is `submitted`/`graded` with a null `score` or `"grade_matches_current_submission": false`. That covers a new submission, a resubmission after grading (old score, grade no longer matches), and a grade the teacher cleared. |
+| `graded` | Turned in and graded for the current attempt. |
 
-To find work that needs grading, use Canvas's own rule (the one behind its "needs grading" count): `submission_type` is not null, `excused` is not true, and either `workflow_state` is `pending_review`, or it is `submitted` or `graded` with a null `score` or `"grade_matches_current_submission": false`. A resubmission after grading comes back `submitted` with the old score and `"grade_matches_current_submission": false`; a grade the teacher cleared stays `graded` with a null `score`. So fetch all states for this, not just `submitted`.
+Omit `--state` for every status. Canvas has no filter for these statuses, so easel always asks Canvas for every submission and filters them itself. On-paper and no-submission assignments have nothing turned in online, so every student who isn't excused is `not-submitted` there.
 
 `--format id` prints one student user id per row, so give it a single `--assignment`; across several assignments the ids repeat with no assignment to tell them apart — use `smalljsonl`, which includes `assignment_id`.
 

@@ -19,7 +19,7 @@ final class SubmissionsTests: XCTestCase {
 
         let submissions = try await client.submissions(courseID: 101)
 
-        XCTAssertEqual(submissions.count, 3)
+        XCTAssertEqual(submissions.count, 5)
         let graded = submissions[0]
         XCTAssertEqual(graded.id, 7001)
         XCTAssertEqual(graded.userID, 9001)
@@ -57,24 +57,67 @@ final class SubmissionsTests: XCTestCase {
         XCTAssertFalse(items.contains { $0.name == "workflow_state" })
     }
 
-    func testAssignmentAndStateQuery() async throws {
+    func testAssignmentQueryAndStatusFilter() async throws {
         let transport = StubTransport()
         await transport.on("/courses/101/students/submissions", json: Fixtures.submissionsList)
         let client = CanvasClient.stubbed(transport)
 
-        _ = try await client.submissions(courseID: 101, assignmentIDs: [501, 502], state: .pendingReview)
+        let submissions = try await client.submissions(courseID: 101, assignmentIDs: [501, 502], status: .notSubmitted)
 
+        // The placeholder and the graded-0 missing work, but not the excused row.
+        XCTAssertEqual(submissions.map(\.userID), [9003, 9005])
         let recorded = await transport.recorded
         let items = try queryItems(try XCTUnwrap(recorded.first))
         XCTAssertEqual(items.filter { $0.name == "assignment_ids[]" }.map(\.value), ["501", "502"])
-        XCTAssertTrue(items.contains(URLQueryItem(name: "workflow_state", value: "pending_review")))
+        // The status filter runs on the client; Canvas is asked for every state.
+        XCTAssertFalse(items.contains { $0.name == "workflow_state" })
+    }
+
+    // MARK: - Status
+
+    func testStatusOfEachFixtureRow() throws {
+        let statuses = try decodeSubmissions().map(\.status)
+        XCTAssertEqual(statuses, [
+            .graded,        // scored, grade matches the current attempt
+            .notSubmitted,  // unsubmitted placeholder
+            .excused,       // Canvas marks it graded, with no score
+            .notSubmitted,  // missing work a teacher scored 0: graded, never submitted
+            .needsGrading,  // resubmitted after grading: old score, grade doesn't match
+        ])
+    }
+
+    func testStatusRulesBeyondTheFixture() throws {
+        func status(_ json: String) throws -> SubmissionStatus {
+            try CanvasJSON.makeDecoder().decode(Submission.self, from: Data(json.utf8)).status
+        }
+        let base = #""id": 1, "user_id": 2, "assignment_id": 3, "submitted_at": "2026-09-04T22:15:00Z""#
+        // First submission, no score yet.
+        XCTAssertEqual(
+            try status(#"{ \#(base), "workflow_state": "submitted", "submission_type": "online_upload" }"#),
+            .needsGrading
+        )
+        // A quiz waiting on manual review, even with a provisional score.
+        XCTAssertEqual(
+            try status(#"{ \#(base), "workflow_state": "pending_review", "submission_type": "online_quiz", "score": 4 }"#),
+            .needsGrading
+        )
+        // A teacher cleared the grade: still graded, but no score.
+        XCTAssertEqual(
+            try status(#"{ \#(base), "workflow_state": "graded", "submission_type": "online_upload" }"#),
+            .needsGrading
+        )
+        // Excused wins over a submission.
+        XCTAssertEqual(
+            try status(#"{ \#(base), "workflow_state": "graded", "submission_type": "online_upload", "excused": true }"#),
+            .excused
+        )
     }
 
     // MARK: - Output formats
 
     func testIDFormatListsStudentUserIDs() throws {
         let rendered = try OutputFormatter.render(decodeSubmissions(), format: .id)
-        XCTAssertEqual(rendered, "9001\n9003\n9004")
+        XCTAssertEqual(rendered, "9001\n9003\n9004\n9005\n9006")
     }
 
     func testSmallJSONLCarriesGradingFields() throws {
