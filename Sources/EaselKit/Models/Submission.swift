@@ -55,6 +55,39 @@ public struct Submission: Codable, Sendable, Equatable, CanvasRow {
         case user
     }
 
+    /// The key for easel's derived `status`, written alongside Canvas's fields
+    /// but never decoded (it is computed from them).
+    private enum DerivedKeys: String, CodingKey {
+        case status
+    }
+
+    /// Encodes Canvas's fields as decoded (nil fields omitted, as synthesized
+    /// encoding does) plus easel's `status`, so `json`/`jsonl` show it too.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(userID, forKey: .userID)
+        try container.encode(assignmentID, forKey: .assignmentID)
+        try container.encodeIfPresent(workflowState, forKey: .workflowState)
+        try container.encodeIfPresent(submissionType, forKey: .submissionType)
+        try container.encodeIfPresent(attempt, forKey: .attempt)
+        try container.encodeIfPresent(submittedAt, forKey: .submittedAt)
+        try container.encodeIfPresent(gradedAt, forKey: .gradedAt)
+        try container.encodeIfPresent(score, forKey: .score)
+        try container.encodeIfPresent(grade, forKey: .grade)
+        try container.encodeIfPresent(gradeMatchesCurrentSubmission, forKey: .gradeMatchesCurrentSubmission)
+        try container.encodeIfPresent(excused, forKey: .excused)
+        try container.encodeIfPresent(late, forKey: .late)
+        try container.encodeIfPresent(missing, forKey: .missing)
+        try container.encodeIfPresent(latePolicyStatus, forKey: .latePolicyStatus)
+        try container.encodeIfPresent(secondsLate, forKey: .secondsLate)
+        try container.encodeIfPresent(graderID, forKey: .graderID)
+        try container.encodeIfPresent(previewURL, forKey: .previewURL)
+        try container.encodeIfPresent(user, forKey: .user)
+        var derived = encoder.container(keyedBy: DerivedKeys.self)
+        try derived.encode(status.rawValue, forKey: .status)
+    }
+
     /// The student's user id: the handle Canvas uses to fetch or grade one
     /// submission within an assignment.
     public var rowID: String {
@@ -96,6 +129,7 @@ public struct Submission: Codable, Sendable, Equatable, CanvasRow {
             ("user_id", .int(userID)),
             ("assignment_id", .int(assignmentID)),
             ("name", user?.name.map(JSONScalar.string)),
+            ("status", .string(status.rawValue)),
             ("workflow_state", workflowState.map(JSONScalar.string)),
             ("submission_type", submissionType.map(JSONScalar.string)),
             ("submitted_at", submittedAt.map(JSONScalar.date)),
@@ -113,6 +147,7 @@ public struct Submission: Codable, Sendable, Equatable, CanvasRow {
             heading: Markdown.heading(2, user?.name ?? "User \(userID)", handle: "#\(userID)"),
             fields: [
                 Markdown.field("assignment_id", Markdown.int(assignmentID)),
+                Markdown.field("status", status.rawValue),
                 Markdown.field("workflow_state", workflowState),
                 Markdown.field("submission_type", submissionType),
                 Markdown.field("attempt", Markdown.int(attempt)),

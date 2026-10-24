@@ -73,6 +73,23 @@ final class SubmissionsTests: XCTestCase {
         XCTAssertFalse(items.contains { $0.name == "workflow_state" })
     }
 
+    func testStatusFilterSelectsEachStatus() async throws {
+        let transport = StubTransport()
+        await transport.on("/courses/101/students/submissions", json: Fixtures.submissionsList)
+        let client = CanvasClient.stubbed(transport)
+
+        let expected: [(SubmissionStatus, [Int])] = [
+            (.notSubmitted, [9003, 9005]),
+            (.needsGrading, [9006]),
+            (.graded, [9001]),
+            (.excused, [9004]),
+        ]
+        for (status, userIDs) in expected {
+            let submissions = try await client.submissions(courseID: 101, status: status)
+            XCTAssertEqual(submissions.map(\.userID), userIDs, "\(status)")
+        }
+    }
+
     // MARK: - Status
 
     func testStatusOfEachFixtureRow() throws {
@@ -118,6 +135,30 @@ final class SubmissionsTests: XCTestCase {
     func testIDFormatListsStudentUserIDs() throws {
         let rendered = try OutputFormatter.render(decodeSubmissions(), format: .id)
         XCTAssertEqual(rendered, "9001\n9003\n9004\n9005\n9006")
+    }
+
+    func testEveryFormatShowsStatus() throws {
+        let submissions = try decodeSubmissions()
+        // Graded missing work: Canvas says graded, easel says not submitted.
+        let gradedZero = submissions[3]
+        XCTAssertEqual(gradedZero.workflowState, "graded")
+        XCTAssertTrue(try OutputFormatter.render(gradedZero, format: .jsonl).contains("\"status\":\"not-submitted\""))
+        XCTAssertTrue(try OutputFormatter.render(gradedZero, format: .smalljsonl).contains("\"status\":\"not-submitted\""))
+        XCTAssertTrue(try OutputFormatter.render(gradedZero, format: .md).contains("- **status:** not-submitted"))
+        XCTAssertTrue(try OutputFormatter.render(submissions[2], format: .jsonl).contains("\"status\":\"excused\""))
+    }
+
+    func testJSONRoundTripsCanvasFields() throws {
+        // The hand-written encode must keep every Canvas field; decoding
+        // ignores the extra status key.
+        let submissions = try decodeSubmissions()
+        let json = try OutputFormatter.render(submissions, format: .json)
+        let decoded = try CanvasJSON.makeDecoder().decode([Submission].self, from: Data(json.utf8))
+        XCTAssertEqual(decoded, submissions)
+        // Nil fields stay omitted, as synthesized encoding does.
+        let placeholder = try OutputFormatter.render(submissions[1], format: .jsonl)
+        XCTAssertFalse(placeholder.contains("submitted_at"))
+        XCTAssertFalse(placeholder.contains("null"))
     }
 
     func testSmallJSONLCarriesGradingFields() throws {

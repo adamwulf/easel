@@ -61,7 +61,7 @@ Notes:
 - `--body`/`--body-file` (and `--description`/`--description-file`) are mutually exclusive; `-` means stdin. Content is HTML.
 - Update commands send only the flags you give; everything else stays untouched.
 - Dates must be full ISO 8601 **with a time zone** (`2026-09-05T23:59:00-05:00` or `...Z`); zone-less values are rejected. Canvas stores and returns UTC (`Z`).
-- Submissions: `--state` is easel's own status, not Canvas's `workflow_state` (Canvas marks graded-missing work and excused students `graded`). Each row has exactly one, checked in order: `excused` (excused is true); `not-submitted` (`submitted_at` is null, even if the missing work has a grade, such as a 0); `needs-grading` (Canvas's needs-grading rule: a new submission, a resubmission after grading, a quiz pending review, or a cleared grade); else `graded`. On-paper/no-submission assignments show every non-excused student as `not-submitted`. Only published assignments have submissions; an unpublished `--assignment` id gets a 403. `--format id` prints one student user id per row; use it with a single `--assignment`, or use `smalljsonl` (includes `assignment_id`) across assignments.
+- Submissions: `--state` is easel's own status, not Canvas's `workflow_state` (Canvas marks graded-missing work and excused students `graded`). Each row has exactly one, checked in order: `excused` (excused is true); `not-submitted` (`submitted_at` is null, even if the missing work has a grade, such as a 0); `needs-grading` (Canvas's needs-grading rule: a new submission, a resubmission after grading, a quiz pending review, or a cleared grade); else `graded`. Every format prints each row's `status`; trust it over `workflow_state`. On-paper/no-submission assignments show every non-excused student as `not-submitted`. Only published assignments have submissions; an unpublished `--assignment` id gets a 403. `--format id` prints one student user id per row; use it with a single `--assignment`, or use `smalljsonl` (includes `assignment_id`) across assignments.
 
 Rubric JSON (`create-rubric`/`update-rubric` replace title + criteria):
 
@@ -85,7 +85,7 @@ Rubric JSON (`create-rubric`/`update-rubric` replace title + criteria):
 
 ## Can and can't
 
-**Can:** list courses; list/read/update pages and assignments (titles, HTML bodies/descriptions, publish/unpublish, due + unlock/lock dates, points, scheduled page publication); list people with roles/emails; list submissions with state, score, and late/missing/excused flags; list/read/create/update rubrics and attach them to assignments.
+**Can:** list courses; list/read/update pages and assignments (titles, HTML bodies/descriptions, publish/unpublish, due + unlock/lock dates, points, scheduled page publication); list people with roles/emails; list submissions with easel's status (not-submitted/needs-grading/graded/excused), score, and late/missing flags; list/read/create/update rubrics and attach them to assignments.
 
 **Can't (not implemented):** create or delete pages/assignments; grade, comment on, or read the content of submissions; modules, quizzes, files, announcements, or discussions; enrollment changes. Pages have no unlock/lock dates (Canvas limitation) — only `--publish-at`.
 

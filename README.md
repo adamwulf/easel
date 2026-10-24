@@ -143,7 +143,7 @@ Each row is one active student's submission for one published assignment; studen
 | `needs-grading` | Canvas's own rule, the one behind its "needs grading" count: `submission_type` is set, and `workflow_state` is `pending_review`, or is `submitted`/`graded` with a null `score` or `"grade_matches_current_submission": false`. That covers a new submission, a resubmission after grading (old score, grade no longer matches), and a grade the teacher cleared. |
 | `graded` | Turned in and graded for the current attempt. |
 
-Omit `--state` for every status. Canvas has no filter for these statuses, so easel always asks Canvas for every submission and filters them itself. On-paper and no-submission assignments have nothing turned in online, so every student who isn't excused is `not-submitted` there.
+Every format shows each row's `status` (easel's field, not a Canvas one) next to Canvas's raw `workflow_state`, so an unfiltered list reads correctly too. Omit `--state` for every status. Canvas has no filter for these statuses, so easel always asks Canvas for every submission and filters them itself. On-paper and no-submission assignments have nothing turned in online, so every student who isn't excused is `not-submitted` there.
 
 `--format id` prints one student user id per row, so give it a single `--assignment`; across several assignments the ids repeat with no assignment to tell them apart — use `smalljsonl`, which includes `assignment_id`.
 
