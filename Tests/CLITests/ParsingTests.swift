@@ -6,7 +6,7 @@ import XCTest
 /// or an API key.
 final class ParsingTests: XCTestCase {
     func testRootListsAllSubcommands() {
-        XCTAssertEqual(Easel.configuration.subcommands.count, 17)
+        XCTAssertEqual(Easel.configuration.subcommands.count, 18)
     }
 
     func testCoursesParses() throws {
@@ -189,6 +189,26 @@ final class ParsingTests: XCTestCase {
 
     func testUpdatePageRejectsDateWithoutTimeZone() {
         XCTAssertThrowsError(try UpdatePageCommand.parse(["101", "home", "--publish-at", "2026-08-24T08:00:00"]))
+    }
+
+    func testSubmissionsParsesAssignmentsAndState() throws {
+        let command = try SubmissionsCommand.parse(
+            ["101", "--assignment", "501", "--assignment", "502", "--state", "pending_review"]
+        )
+        XCTAssertEqual(command.courseID, 101)
+        XCTAssertEqual(command.assignment, [501, 502])
+        XCTAssertEqual(command.state, .pendingReview)
+    }
+
+    func testSubmissionsDefaultsToAllAssignmentsAndStates() throws {
+        let command = try SubmissionsCommand.parse(["101"])
+        XCTAssertEqual(command.assignment, [])
+        XCTAssertNil(command.state)
+    }
+
+    func testSubmissionsRejectsUnknownState() {
+        // A typo must fail, not silently fall back to every state.
+        XCTAssertThrowsError(try SubmissionsCommand.parse(["101", "--state", "excused"]))
     }
 
     func testUsersParsesEnrollmentType() throws {

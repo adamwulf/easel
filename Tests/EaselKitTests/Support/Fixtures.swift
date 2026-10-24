@@ -213,6 +213,85 @@ enum Fixtures {
     }
     """
 
+    // MARK: - Submissions
+
+    static let submissionsList = """
+    [
+      {
+        "id": 7001,
+        "user_id": 9001,
+        "assignment_id": 501,
+        "workflow_state": "graded",
+        "submission_type": "online_upload",
+        "attempt": 1,
+        "submitted_at": "2026-09-04T22:15:00Z",
+        "graded_at": "2026-09-08T15:00:00Z",
+        "score": 92.0,
+        "grade": "92",
+        "grade_matches_current_submission": true,
+        "excused": false,
+        "late": false,
+        "missing": false,
+        "late_policy_status": null,
+        "seconds_late": 0,
+        "grader_id": 9002,
+        "preview_url": "https://example.instructure.com/courses/101/assignments/501/submissions/9001?preview=1",
+        "user": {
+          "id": 9001,
+          "name": "Alex Rivera",
+          "sortable_name": "Rivera, Alex",
+          "short_name": "Alex",
+          "sis_user_id": "S0001",
+          "login_id": "arivera"
+        }
+      },
+      {
+        "id": 7002,
+        "user_id": 9003,
+        "assignment_id": 501,
+        "workflow_state": "unsubmitted",
+        "submission_type": null,
+        "attempt": null,
+        "submitted_at": null,
+        "graded_at": null,
+        "score": null,
+        "grade": null,
+        "grade_matches_current_submission": true,
+        "excused": false,
+        "late": false,
+        "missing": true,
+        "late_policy_status": null,
+        "seconds_late": 0,
+        "grader_id": null,
+        "user": {
+          "id": 9003,
+          "name": "Jordan Lee",
+          "sortable_name": "Lee, Jordan",
+          "short_name": "Jordan",
+          "login_id": "jlee"
+        }
+      },
+      {
+        "id": 7003,
+        "user_id": 9004,
+        "assignment_id": 501,
+        "workflow_state": "unsubmitted",
+        "submitted_at": null,
+        "score": null,
+        "grade": null,
+        "excused": true,
+        "late": false,
+        "missing": false,
+        "user": {
+          "id": 9004,
+          "name": "Priya Patel",
+          "sortable_name": "Patel, Priya",
+          "login_id": "ppatel"
+        }
+      }
+    ]
+    """
+
     // MARK: - Users
 
     static let usersList = """

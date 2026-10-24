@@ -2,7 +2,7 @@
 
 ## What this is
 
-`easel` is a Swift package + CLI for the Canvas LMS API, built for AI agents that manage courses: list courses, create/read/update/delete wiki pages and assignments, list people, and create/read/update/delete assignment rubrics. The architecture mirrors the `hunch` (Notion) and `cirqueduci` (CircleCI) CLIs: a fat reusable library, a thin executable.
+`easel` is a Swift package + CLI for the Canvas LMS API, built for AI agents that manage courses: list courses, create/read/update/delete wiki pages and assignments, list people, list assignment submissions, and create/read/update/delete assignment rubrics. The architecture mirrors the `hunch` (Notion) and `cirqueduci` (CircleCI) CLIs: a fat reusable library, a thin executable.
 
 ## Build and test
 
@@ -26,7 +26,7 @@ Sources/
     APIs/
       CanvasAPI.swift       low-level: auth header, retry/backoff, error mapping, decode, ONE page per call
       CanvasClient.swift    high-level facade: fetchAll pagination loop; commands only talk to this
-      CanvasClient+*.swift  one file per resource (Courses, Pages, Assignments, Users, Rubrics)
+      CanvasClient+*.swift  one file per resource (Courses, Pages, Assignments, Submissions, Users, Rubrics)
     HTTP/
       HTTPTransport.swift   HTTPRequest/HTTPResponse + HTTPTransport protocol + URLSessionTransport
       LinkHeader.swift      parses rel="next" from Canvas Link headers
@@ -73,7 +73,7 @@ Tests/
 
 - Config resolution order: explicit flag → process environment → nearest `.env` walking up parent directories (closest wins). Keys: `CANVAS_API_KEY`, `CANVAS_HOST`, `EASEL_ANONYMOUS`.
 - Every command takes `--format json|jsonl|smalljsonl|md|id` (default `json`) via `GlobalOptions` and prints via `Easel.emit`. Each `CanvasRow` model supplies its own `summaryRow` (the flat id/title/meta subset for `smalljsonl`) and `markdownRow` (the `md` rendering); `json`/`jsonl` use `Codable` directly.
-- **Anonymous mode** (`EASEL_ANONYMOUS` / `--anonymous`, resolved via `CanvasConfig.resolveAnonymous`; off by default) redacts user-identifying data. It's **one-way**: `anonymous = flag OR env/.env-truthy`. The flag can only turn it on — there is deliberately no `--no-anonymous` — so a truthy env var is a hard privacy guarantee an agent can't bypass. Redaction is a model transform in EaselKit — `CourseUser.anonymized()`: names become the first 3 letters of the given name + surname initial (`Adam Wulf` → `Ada W`, graceful for short/single-word names), and `email`/`login_id` are set to `nil`. It's applied in the command before `emit`, so it covers every format at once. `CanvasConfig` itself stays the pure token+host value the network layer needs; anonymous is a presentation concern resolved separately with the same `.env` machinery. If a future model gains names/emails, give it an `anonymized()` and apply it in its command.
+- **Anonymous mode** (`EASEL_ANONYMOUS` / `--anonymous`, resolved via `CanvasConfig.resolveAnonymous`; off by default) redacts user-identifying data. It's **one-way**: `anonymous = flag OR env/.env-truthy`. The flag can only turn it on — there is deliberately no `--no-anonymous` — so a truthy env var is a hard privacy guarantee an agent can't bypass. Redaction is a model transform in EaselKit — `CourseUser.anonymized()`: names become the first 3 letters of the given name + surname initial (`Adam Wulf` → `Ada W`, graceful for short/single-word names), and `email`/`login_id` are set to `nil`. It's applied in the command before `emit`, so it covers every format at once. `Submission.anonymized()` reuses it for the embedded `user`. `CanvasConfig` itself stays the pure token+host value the network layer needs; anonymous is a presentation concern resolved separately with the same `.env` machinery. If a future model gains names/emails, give it an `anonymized()` and apply it in its command.
 - Commands that change things validate that at least one change flag was given (`validate()`), and `--x` / `--x-file` pairs are mutually exclusive; `-` means stdin.
 - Date flags (`--due-at`, `--unlock-at`, `--lock-at`, `--publish-at`) require full ISO 8601 with an explicit time zone; `ISODateFlag.validate` rejects zone-less values in `validate()` because Canvas silently treats them as UTC. Dates in write bodies stay `String` (passed through verbatim), never `Date`.
 - Commit style: plain descriptive messages; don't squash history.

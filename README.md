@@ -51,7 +51,7 @@ All commands print JSON to stdout by default. Choose the shape with `--format`:
 - `jsonl` — one full JSON object per line.
 - `smalljsonl` — one slim JSON object per line: just id/title plus a few key meta fields, for fetching ids and titles without the full-record bloat.
 - `md` — human-readable Markdown: an `## Title (id)` heading and a labeled field list per record, with page/assignment bodies and rubric, enrollment, and criteria tables.
-- `id` — just the ids, one per line (page url slugs for pages).
+- `id` — just the ids, one per line (page url slugs for pages, student user ids for submissions).
 
 JSON field names match the Canvas API docs. Logs go to `~/Library/Logs/easel/`, never to stdout.
 
@@ -122,6 +122,20 @@ Every date flag (`--due-at`, `--unlock-at`, `--lock-at`, `--publish-at`) takes a
 
 easel rejects values without a time zone before sending anything, because Canvas silently treats zone-less dates as UTC — which shifts the wall-clock time by hours. Canvas stores dates in UTC and returns them with a `Z` suffix, so a date you write with `-05:00` reads back as the equivalent `Z` time.
 
+### Submissions
+
+```bash
+easel submissions 101                                      # every assignment, every state
+easel submissions 101 --assignment 501 --state unsubmitted # who has not turned in 501
+easel submissions 101 --assignment 501 --assignment 502    # repeat --assignment for more
+easel submissions 101 --state pending_review               # e.g. quizzes waiting on manual grading
+easel submissions 101 --assignment 501 --format id         # student user ids
+```
+
+Each row is one active student's submission for one assignment; students with concluded or inactive enrollments are left out. Canvas keeps an `unsubmitted` placeholder for every student an assignment is assigned to, so `--state unsubmitted` is the list of students who haven't turned it in. `--state` takes the Canvas `workflow_state` values `submitted`, `unsubmitted`, `graded`, or `pending_review`; omit it for all states.
+
+`excused` is a flag, not a state: an excused student who never submitted is still `unsubmitted`, with `"excused": true`. To find work that needs grading, look for non-excused submissions that are `submitted` or `pending_review`, or `graded` with `"grade_matches_current_submission": false` (the student resubmitted after grading).
+
 ### People
 
 ```bash
@@ -145,7 +159,8 @@ can bypass redaction — so an agent running the CLI can't leak identities past 
 policy the env var sets.
 
 With it on, every format (`json`, `jsonl`, `smalljsonl`, `md`; `id` is a numeric
-id and is never a name) redacts the person fields on each user:
+id and is never a name) redacts the person fields on each user — the people
+from `users` and the student embedded in each `submissions` row:
 
 | Field | Redacted to |
 | --- | --- |
@@ -159,8 +174,8 @@ contributes only what it has (`Jo Smith` → `Jo S`), middle names are dropped
 (`Mary Jane Watson` → `Mar W`), and a lone name keeps just its first three
 letters (`Prince` → `Pri`). The numeric `id`, `sis_user_id`, `pronouns`, and
 enrollments carry no name and pass through unchanged, so an agent can still
-cross-reference a person by id. Only the `users` command emits personal data
-today, so it's the only output anonymous mode affects.
+cross-reference a person by id. Only the `users` and `submissions` commands emit
+personal data today, so they're the only output anonymous mode affects.
 
 ### Rubrics
 

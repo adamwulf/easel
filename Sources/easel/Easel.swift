@@ -19,6 +19,7 @@ struct Easel: AsyncParsableCommand {
             CreateAssignmentCommand.self,
             UpdateAssignmentCommand.self,
             DeleteAssignmentCommand.self,
+            SubmissionsCommand.self,
             UsersCommand.self,
             RubricsCommand.self,
             RubricCommand.self,

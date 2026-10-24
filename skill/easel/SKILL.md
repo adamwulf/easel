@@ -1,6 +1,6 @@
 ---
 name: easel
-description: Manage Canvas LMS courses from the terminal with the `easel` CLI — list courses and people, read and update wiki pages and assignments (title, body, publish state, due/availability dates, points), and create/update assignment rubrics. Use when asked to read, verify, or update Canvas course content (any Canvas API instance).
+description: Manage Canvas LMS courses from the terminal with the `easel` CLI — list courses, people, and assignment submissions (who has not submitted, what needs grading), read and update wiki pages and assignments (title, body, publish state, due/availability dates, points), and create/update assignment rubrics. Use when asked to read, verify, or update Canvas course content (any Canvas API instance).
 ---
 
 # easel — Canvas LMS CLI
@@ -42,6 +42,10 @@ easel update-assignment <course-id> <id> --name "..." --description-file f.html 
   --published true --points 100 --due-at "2026-09-05T23:59:00-05:00" \
   --unlock-at "2026-08-24T00:00:00-05:00" --lock-at "2026-09-13T23:59:00-05:00"
 
+# Submissions (active students only; one row per student per assignment)
+easel submissions <course-id> [--assignment <id> ...] [--state unsubmitted|submitted|graded|pending_review]
+easel submissions <course-id> --assignment <id> --state unsubmitted   # who has not submitted
+
 # People
 easel users <course-id> [--enrollment-type student] [--search name]
 
@@ -56,6 +60,7 @@ Notes:
 - `--body`/`--body-file` (and `--description`/`--description-file`) are mutually exclusive; `-` means stdin. Content is HTML.
 - Update commands send only the flags you give; everything else stays untouched.
 - Dates must be full ISO 8601 **with a time zone** (`2026-09-05T23:59:00-05:00` or `...Z`); zone-less values are rejected. Canvas stores and returns UTC (`Z`).
+- Submissions: `excused` is a flag, not a state — an excused student who never submitted is `unsubmitted` with `excused: true`, so filter those out yourself. A submission needs grading when it is not excused and is `submitted` or `pending_review`, or is `graded` with `grade_matches_current_submission: false` (a resubmission after grading). `--format id` prints student user ids.
 
 Rubric JSON (`create-rubric`/`update-rubric` replace title + criteria):
 
@@ -79,8 +84,8 @@ Rubric JSON (`create-rubric`/`update-rubric` replace title + criteria):
 
 ## Can and can't
 
-**Can:** list courses; list/read/update pages and assignments (titles, HTML bodies/descriptions, publish/unpublish, due + unlock/lock dates, points, scheduled page publication); list people with roles/emails; list/read/create/update rubrics and attach them to assignments.
+**Can:** list courses; list/read/update pages and assignments (titles, HTML bodies/descriptions, publish/unpublish, due + unlock/lock dates, points, scheduled page publication); list people with roles/emails; list submissions with state, score, and late/missing/excused flags; list/read/create/update rubrics and attach them to assignments.
 
-**Can't (not implemented):** create or delete pages/assignments; grades, submissions, or feedback; modules, quizzes, files, announcements, or discussions; enrollment changes. Pages have no unlock/lock dates (Canvas limitation) — only `--publish-at`.
+**Can't (not implemented):** create or delete pages/assignments; grade, comment on, or read the content of submissions; modules, quizzes, files, announcements, or discussions; enrollment changes. Pages have no unlock/lock dates (Canvas limitation) — only `--publish-at`.
 
 Errors are one-line messages on stderr (401 = bad token, 404 = wrong id/slug). Transient 429/5xx are retried automatically. The source lives in `~/Developer/swift-packages/easel` (Swift package `EaselKit` + CLI; see its CLAUDE.md to extend it).
