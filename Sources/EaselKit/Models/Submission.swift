@@ -1,8 +1,9 @@
 import Foundation
 
 /// One student's submission for one assignment. Canvas keeps a submission for
-/// every student an assignment is assigned to — an `unsubmitted` placeholder
-/// until the student turns something in — so a list covers the whole roster.
+/// every student an assignment is assigned to, so a list covers the whole
+/// roster. A student hasn't turned it in when `submittedAt` is nil (and they
+/// aren't excused), whatever the state: grading missing work marks it `graded`.
 /// `user` appears when the request asks for it via `include[]` (the client
 /// does by default).
 public struct Submission: Codable, Sendable, Equatable, CanvasRow {

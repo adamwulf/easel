@@ -6,9 +6,10 @@ struct SubmissionsCommand: AsyncParsableCommand {
         commandName: "submissions",
         abstract: "List the active students' submissions in a course.",
         discussion: """
-        Canvas keeps a submission for every student an assignment is assigned to,
-        so --state unsubmitted lists, for each assignment, the students who have
-        not turned it in.
+        Canvas keeps a submission for every student an assignment is assigned to.
+        A student has not turned it in when "submitted_at" is null and "excused"
+        is not true, in any state: --state unsubmitted misses missing work that
+        got a grade (such as a 0), because Canvas marks that row graded.
         Excused is a flag, not a state: Canvas lists excused students as graded,
         with "excused": true and no score.
         """

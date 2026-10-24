@@ -126,13 +126,16 @@ easel rejects values without a time zone before sending anything, because Canvas
 
 ```bash
 easel submissions 101                                      # every published assignment, every state
-easel submissions 101 --assignment 501 --state unsubmitted # who has not turned in 501
+easel submissions 101 --assignment 501 --format smalljsonl # then keep rows with no submitted_at, not excused
+easel submissions 101 --assignment 501 --state unsubmitted # not turned in and not graded yet
 easel submissions 101 --assignment 501 --assignment 502    # repeat --assignment for more
 easel submissions 101 --state pending_review               # e.g. quizzes waiting on manual grading
 easel submissions 101 --assignment 501 --format id         # student user ids
 ```
 
-Each row is one active student's submission for one published assignment; students with concluded or inactive enrollments are left out. Unpublished assignments have no student submissions, and Canvas answers `--assignment` with an unpublished id with a 403 ("invalid assignment ids requested"). Canvas keeps an `unsubmitted` placeholder for every student an assignment is assigned to, so `--state unsubmitted` is the list of students who haven't turned it in. `--state` takes the Canvas `workflow_state` values `submitted`, `unsubmitted`, `graded`, or `pending_review`; omit it for all states.
+Each row is one active student's submission for one published assignment; students with concluded or inactive enrollments are left out. Unpublished assignments have no student submissions, and Canvas answers `--assignment` with an unpublished id with a 403 ("invalid assignment ids requested"). Canvas keeps a submission row for every student an assignment is assigned to, turned in or not. `--state` takes the Canvas `workflow_state` values `submitted`, `unsubmitted`, `graded`, or `pending_review`; omit it for all states.
+
+To list every student who has not turned an assignment in, fetch all states and keep the rows where `submitted_at` is null and `excused` is not true. `--state unsubmitted` alone is not enough: it shows only students with no submission *and* no grade. When a teacher enters a 0 for missing work, or the course's late policy grades missing submissions automatically, Canvas marks the row `graded` while `submitted_at` stays null.
 
 `excused` is a flag, not a state: Canvas marks an excused submission `graded`, with `"excused": true` and a null `score` and `grade`. So `--state unsubmitted` already leaves excused students out, but `--state graded` includes them — filter on `excused` when it matters.
 
