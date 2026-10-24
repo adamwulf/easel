@@ -6,7 +6,8 @@ public extension CanvasClient {
     /// enrollments are left out.
     /// - Parameters:
     ///   - assignmentIDs: Only submissions for these assignments; empty means
-    ///     every assignment in the course.
+    ///     every published assignment in the course. Canvas answers 403
+    ///     ("invalid assignment ids requested") for an unpublished id.
     ///   - state: Only submissions in this workflow state; nil means all states.
     func submissions(
         courseID: Int,

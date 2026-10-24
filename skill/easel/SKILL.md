@@ -42,7 +42,7 @@ easel update-assignment <course-id> <id> --name "..." --description-file f.html 
   --published true --points 100 --due-at "2026-09-05T23:59:00-05:00" \
   --unlock-at "2026-08-24T00:00:00-05:00" --lock-at "2026-09-13T23:59:00-05:00"
 
-# Submissions (active students only; one row per student per assignment)
+# Submissions (active students, published assignments; one row per student per assignment)
 easel submissions <course-id> [--assignment <id> ...] [--state unsubmitted|submitted|graded|pending_review]
 easel submissions <course-id> --assignment <id> --state unsubmitted   # who has not submitted
 
@@ -60,7 +60,7 @@ Notes:
 - `--body`/`--body-file` (and `--description`/`--description-file`) are mutually exclusive; `-` means stdin. Content is HTML.
 - Update commands send only the flags you give; everything else stays untouched.
 - Dates must be full ISO 8601 **with a time zone** (`2026-09-05T23:59:00-05:00` or `...Z`); zone-less values are rejected. Canvas stores and returns UTC (`Z`).
-- Submissions: `excused` is a flag, not a state — an excused student who never submitted is `unsubmitted` with `excused: true`, so filter those out yourself. A submission needs grading when it is not excused and is `submitted` or `pending_review`, or is `graded` with `grade_matches_current_submission: false` (a resubmission after grading). `--format id` prints student user ids.
+- Submissions: `excused` is a flag, not a state — Canvas marks excused rows `graded` with `excused: true` and a null score, so `--state unsubmitted` already omits them but `--state graded` includes them. A submission needs grading (Canvas's rule) when `submission_type` is not null, `excused` is not true, and `workflow_state` is `pending_review`, or is `submitted`/`graded` with a null `score` or `grade_matches_current_submission: false` — a cleared grade stays `graded` with a null score, so fetch all states, not just `submitted`. Only published assignments have submissions; an unpublished `--assignment` id gets a 403. `--format id` prints one student user id per row; use it with a single `--assignment`, or use `smalljsonl` (includes `assignment_id`) across assignments.
 
 Rubric JSON (`create-rubric`/`update-rubric` replace title + criteria):
 

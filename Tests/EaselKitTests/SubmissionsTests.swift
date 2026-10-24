@@ -39,9 +39,11 @@ final class SubmissionsTests: XCTestCase {
         XCTAssertNil(missing.submittedAt)
         XCTAssertNil(missing.score)
 
+        // Canvas marks an excused submission graded, with no score.
         let excused = submissions[2]
-        XCTAssertEqual(excused.workflowState, "unsubmitted")
+        XCTAssertEqual(excused.workflowState, "graded")
         XCTAssertEqual(excused.excused, true)
+        XCTAssertNil(excused.score)
 
         let recorded = await transport.recorded
         let request = try XCTUnwrap(recorded.first)
@@ -80,14 +82,17 @@ final class SubmissionsTests: XCTestCase {
         let graded = try OutputFormatter.render(submissions[0], format: .smalljsonl)
         XCTAssertTrue(graded.contains("\"name\":\"Alex Rivera\""))
         XCTAssertTrue(graded.contains("\"workflow_state\":\"graded\""))
+        XCTAssertTrue(graded.contains("\"submission_type\":\"online_upload\""))
         XCTAssertTrue(graded.contains("\"score\":92"))
         XCTAssertTrue(graded.contains("\"grade_matches_current_submission\":true"))
 
         let excused = try OutputFormatter.render(submissions[2], format: .smalljsonl)
         XCTAssertTrue(excused.contains("\"excused\":true"))
-        XCTAssertTrue(excused.contains("\"workflow_state\":\"unsubmitted\""))
+        XCTAssertTrue(excused.contains("\"workflow_state\":\"graded\""))
         // Nil fields drop out.
         XCTAssertFalse(excused.contains("submitted_at"))
+        XCTAssertFalse(excused.contains("submission_type"))
+        XCTAssertFalse(excused.contains("score"))
     }
 
     func testMarkdownHeadingUsesStudentName() throws {
@@ -118,10 +123,20 @@ final class SubmissionsTests: XCTestCase {
         XCTAssertEqual(redacted[0].score, 92)
         XCTAssertEqual(redacted[2].excused, true)
 
-        let rendered = try OutputFormatter.render(redacted, format: .json)
-        XCTAssertFalse(rendered.contains("Rivera"))
-        XCTAssertFalse(rendered.contains("Patel"))
-        XCTAssertFalse(rendered.contains("\"arivera\""))
-        XCTAssertTrue(rendered.contains("Jor L"))
+        XCTAssertNil(redacted[0].user?.email)
+
+        // Every format renders from the redacted model; md and smalljsonl read
+        // the name through their own paths, so check each one.
+        for format in [OutputFormat.json, .jsonl, .smalljsonl, .md] {
+            let rendered = try OutputFormatter.render(redacted, format: format)
+            XCTAssertFalse(rendered.contains("Rivera"), "\(format)")
+            XCTAssertFalse(rendered.contains("Patel"), "\(format)")
+            XCTAssertFalse(rendered.contains("arivera"), "\(format)")
+            XCTAssertTrue(rendered.contains("Jor L"), "\(format)")
+        }
+        let markdown = try OutputFormatter.render(redacted, format: .md)
+        XCTAssertTrue(markdown.contains("## Ale R (#9001)"))
+        let summary = try OutputFormatter.render(redacted[0], format: .smalljsonl)
+        XCTAssertTrue(summary.contains("\"name\":\"Ale R\""))
     }
 }

@@ -10,8 +10,9 @@ public struct Submission: Codable, Sendable, Equatable, CanvasRow {
     public let userID: Int
     public let assignmentID: Int
     /// `submitted`, `unsubmitted`, `graded`, or `pending_review`. A
-    /// resubmission after grading can stay `graded`; check
-    /// `gradeMatchesCurrentSubmission`.
+    /// resubmission after grading comes back `submitted` with the old score
+    /// (see `gradeMatchesCurrentSubmission`). `graded` alone doesn't mean
+    /// scored: excused rows and cleared grades stay `graded` with a nil score.
     public let workflowState: String?
     public let submissionType: String?
     public let attempt: Int?
@@ -21,8 +22,8 @@ public struct Submission: Codable, Sendable, Equatable, CanvasRow {
     public let grade: String?
     /// False when the student resubmitted after the last grading.
     public let gradeMatchesCurrentSubmission: Bool?
-    /// Excused is a flag, not a workflow state: an excused student who never
-    /// submitted stays `unsubmitted`.
+    /// Excused is a flag, not a workflow state. Canvas marks an excused
+    /// submission `graded` with a nil score and grade.
     public let excused: Bool?
     public let late: Bool?
     public let missing: Bool?
@@ -67,6 +68,7 @@ public struct Submission: Codable, Sendable, Equatable, CanvasRow {
             ("assignment_id", .int(assignmentID)),
             ("name", user?.name.map(JSONScalar.string)),
             ("workflow_state", workflowState.map(JSONScalar.string)),
+            ("submission_type", submissionType.map(JSONScalar.string)),
             ("submitted_at", submittedAt.map(JSONScalar.date)),
             ("score", score.map(JSONScalar.double)),
             ("grade", grade.map(JSONScalar.string)),

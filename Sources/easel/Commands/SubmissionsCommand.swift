@@ -9,15 +9,15 @@ struct SubmissionsCommand: AsyncParsableCommand {
         Canvas keeps a submission for every student an assignment is assigned to,
         so --state unsubmitted lists, for each assignment, the students who have
         not turned it in.
-        Excused is a flag, not a state: excused students who never submitted are
-        listed as unsubmitted with "excused": true.
+        Excused is a flag, not a state: Canvas lists excused students as graded,
+        with "excused": true and no score.
         """
     )
 
     @Argument(help: "The course id.")
     var courseID: Int
 
-    @Option(help: "Only submissions for this assignment id; repeat for more. Omit for every assignment.")
+    @Option(help: "Only submissions for this published assignment id; repeat for more. Omit for every published assignment.")
     var assignment: [Int] = []
 
     @Option(help: "Only submissions in this state: submitted, unsubmitted, graded, or pending_review.")

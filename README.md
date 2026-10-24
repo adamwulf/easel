@@ -1,6 +1,6 @@
 # easel
 
-A Swift package and CLI tool for the [Canvas LMS API](https://developerdocs.instructure.com/services/canvas), built so AI agents (and humans) can manage course content from the terminal: list courses, create/read/update/delete wiki pages and assignments, list people, and create/read/update/delete assignment rubrics.
+A Swift package and CLI tool for the [Canvas LMS API](https://developerdocs.instructure.com/services/canvas), built so AI agents (and humans) can manage course content from the terminal: list courses, create/read/update/delete wiki pages and assignments, list people, list assignment submissions, and create/read/update/delete assignment rubrics.
 
 An easel is the thing that holds a canvas.
 
@@ -125,16 +125,20 @@ easel rejects values without a time zone before sending anything, because Canvas
 ### Submissions
 
 ```bash
-easel submissions 101                                      # every assignment, every state
+easel submissions 101                                      # every published assignment, every state
 easel submissions 101 --assignment 501 --state unsubmitted # who has not turned in 501
 easel submissions 101 --assignment 501 --assignment 502    # repeat --assignment for more
 easel submissions 101 --state pending_review               # e.g. quizzes waiting on manual grading
 easel submissions 101 --assignment 501 --format id         # student user ids
 ```
 
-Each row is one active student's submission for one assignment; students with concluded or inactive enrollments are left out. Canvas keeps an `unsubmitted` placeholder for every student an assignment is assigned to, so `--state unsubmitted` is the list of students who haven't turned it in. `--state` takes the Canvas `workflow_state` values `submitted`, `unsubmitted`, `graded`, or `pending_review`; omit it for all states.
+Each row is one active student's submission for one published assignment; students with concluded or inactive enrollments are left out. Unpublished assignments have no student submissions, and Canvas answers `--assignment` with an unpublished id with a 403 ("invalid assignment ids requested"). Canvas keeps an `unsubmitted` placeholder for every student an assignment is assigned to, so `--state unsubmitted` is the list of students who haven't turned it in. `--state` takes the Canvas `workflow_state` values `submitted`, `unsubmitted`, `graded`, or `pending_review`; omit it for all states.
 
-`excused` is a flag, not a state: an excused student who never submitted is still `unsubmitted`, with `"excused": true`. To find work that needs grading, look for non-excused submissions that are `submitted` or `pending_review`, or `graded` with `"grade_matches_current_submission": false` (the student resubmitted after grading).
+`excused` is a flag, not a state: Canvas marks an excused submission `graded`, with `"excused": true` and a null `score` and `grade`. So `--state unsubmitted` already leaves excused students out, but `--state graded` includes them — filter on `excused` when it matters.
+
+To find work that needs grading, use Canvas's own rule (the one behind its "needs grading" count): `submission_type` is not null, `excused` is not true, and either `workflow_state` is `pending_review`, or it is `submitted` or `graded` with a null `score` or `"grade_matches_current_submission": false`. A resubmission after grading comes back `submitted` with the old score and `"grade_matches_current_submission": false`; a grade the teacher cleared stays `graded` with a null `score`. So fetch all states for this, not just `submitted`.
+
+`--format id` prints one student user id per row, so give it a single `--assignment`; across several assignments the ids repeat with no assignment to tell them apart — use `smalljsonl`, which includes `assignment_id`.
 
 ### People
 

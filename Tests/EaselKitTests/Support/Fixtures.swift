@@ -242,7 +242,8 @@ enum Fixtures {
           "sortable_name": "Rivera, Alex",
           "short_name": "Alex",
           "sis_user_id": "S0001",
-          "login_id": "arivera"
+          "login_id": "arivera",
+          "email": "arivera@example.edu"
         }
       },
       {
@@ -275,8 +276,11 @@ enum Fixtures {
         "id": 7003,
         "user_id": 9004,
         "assignment_id": 501,
-        "workflow_state": "unsubmitted",
+        "workflow_state": "graded",
+        "submission_type": null,
         "submitted_at": null,
+        "graded_at": "2026-09-08T15:05:00Z",
+        "grade_matches_current_submission": true,
         "score": null,
         "grade": null,
         "excused": true,
