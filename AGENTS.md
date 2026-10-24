@@ -1,8 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
 ## What this is
 
-`easel` is a Swift package + CLI for the Canvas LMS API, built for AI agents that manage courses: list courses, create/read/update/delete wiki pages and assignments, list people, and create/read/update/delete assignment rubrics. The architecture mirrors the `hunch` (Notion) and `cirqueduci` (CircleCI) CLIs: a fat reusable library, a thin executable.
+`easel` is a Swift package + CLI for the Canvas LMS API, built for AI agents that manage courses: list courses, create/read/update/delete wiki pages and assignments, list people, list assignment submissions, and create/read/update/delete assignment rubrics. The architecture mirrors the `hunch` (Notion) and `cirqueduci` (CircleCI) CLIs: a fat reusable library, a thin executable.
 
 ## Build and test
 
@@ -26,7 +26,7 @@ Sources/
     APIs/
       CanvasAPI.swift       low-level: auth header, retry/backoff, error mapping, decode, ONE page per call
       CanvasClient.swift    high-level facade: fetchAll pagination loop; commands only talk to this
-      CanvasClient+*.swift  one file per resource (Courses, Pages, Assignments, Users, Rubrics)
+      CanvasClient+*.swift  one file per resource (Courses, Pages, Assignments, Submissions, Users, Rubrics)
     HTTP/
       HTTPTransport.swift   HTTPRequest/HTTPResponse + HTTPTransport protocol + URLSessionTransport
       LinkHeader.swift      parses rel="next" from Canvas Link headers
@@ -58,6 +58,7 @@ Tests/
 - **Explicit CodingKeys, no key-conversion strategy.** Model fields keep Canvas's snake_case names in JSON so CLI output matches the Canvas docs. Optionals everywhere except true invariants (ids, page url) so decoding tolerates instance differences.
 - **Write bodies omit nil fields** (synthesized Encodable uses encodeIfPresent), so partial updates leave other fields untouched.
 - **Rubric bodies use indexed hashes.** Canvas's Rails controllers expect `rubric[criteria]` (and each criterion's `ratings`) keyed `"0", "1", ...` — `RubricBody` converts the array-based `RubricDraft` into that shape. Don't "fix" this to plain JSON arrays; Canvas ignores them.
+- **Submission status is easel's own.** `easel submissions --state` takes a `SubmissionStatus` (`not-submitted`, `needs-grading`, `graded`, `excused`) computed by `Submission.status` from Canvas's fields, and `CanvasClient.submissions` filters on it after fetching every state. Every format prints it as `status`; `Submission` has a hand-written `encode(to:)` to add it to `json`/`jsonl`, so a new field needs a line there too. Don't "fix" this to pass Canvas's `workflow_state`: Canvas marks graded-missing work and excused students `graded`, so no `workflow_state` means "not turned in".
 - **Logging:** EaselKit only uses swift-log (`Logger(label: "easel.api")`) and never imports FellerBuncher; the executable bootstraps FellerBuncher once in `main()` (console `.none`) and drains before exit. stdout is reserved for command output. Never log the token.
 
 ## Adding a new endpoint
@@ -73,7 +74,7 @@ Tests/
 
 - Config resolution order: explicit flag → process environment → nearest `.env` walking up parent directories (closest wins). Keys: `CANVAS_API_KEY`, `CANVAS_HOST`, `EASEL_ANONYMOUS`.
 - Every command takes `--format json|jsonl|smalljsonl|md|id` (default `json`) via `GlobalOptions` and prints via `Easel.emit`. Each `CanvasRow` model supplies its own `summaryRow` (the flat id/title/meta subset for `smalljsonl`) and `markdownRow` (the `md` rendering); `json`/`jsonl` use `Codable` directly.
-- **Anonymous mode** (`EASEL_ANONYMOUS` / `--anonymous`, resolved via `CanvasConfig.resolveAnonymous`; off by default) redacts user-identifying data. It's **one-way**: `anonymous = flag OR env/.env-truthy`. The flag can only turn it on — there is deliberately no `--no-anonymous` — so a truthy env var is a hard privacy guarantee an agent can't bypass. Redaction is a model transform in EaselKit — `CourseUser.anonymized()`: names become the first 3 letters of the given name + surname initial (`Adam Wulf` → `Ada W`, graceful for short/single-word names), and `email`/`login_id` are set to `nil`. It's applied in the command before `emit`, so it covers every format at once. `CanvasConfig` itself stays the pure token+host value the network layer needs; anonymous is a presentation concern resolved separately with the same `.env` machinery. If a future model gains names/emails, give it an `anonymized()` and apply it in its command.
+- **Anonymous mode** (`EASEL_ANONYMOUS` / `--anonymous`, resolved via `CanvasConfig.resolveAnonymous`; off by default) redacts user-identifying data. It's **one-way**: `anonymous = flag OR env/.env-truthy`. The flag can only turn it on — there is deliberately no `--no-anonymous` — so a truthy env var is a hard privacy guarantee an agent can't bypass. Redaction is a model transform in EaselKit — `CourseUser.anonymized()`: names become the first 3 letters of the given name + surname initial (`Adam Wulf` → `Ada W`, graceful for short/single-word names), and `email`/`login_id` are set to `nil`. It's applied in the command before `emit`, so it covers every format at once. `Submission.anonymized()` reuses it for the embedded `user`. `CanvasConfig` itself stays the pure token+host value the network layer needs; anonymous is a presentation concern resolved separately with the same `.env` machinery. If a future model gains names/emails, give it an `anonymized()` and apply it in its command.
 - Commands that change things validate that at least one change flag was given (`validate()`), and `--x` / `--x-file` pairs are mutually exclusive; `-` means stdin.
 - Date flags (`--due-at`, `--unlock-at`, `--lock-at`, `--publish-at`) require full ISO 8601 with an explicit time zone; `ISODateFlag.validate` rejects zone-less values in `validate()` because Canvas silently treats them as UTC. Dates in write bodies stay `String` (passed through verbatim), never `Date`.
 - Commit style: plain descriptive messages; don't squash history.

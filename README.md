@@ -1,6 +1,6 @@
 # easel
 
-A Swift package and CLI tool for the [Canvas LMS API](https://developerdocs.instructure.com/services/canvas), built so AI agents (and humans) can manage course content from the terminal: list courses, create/read/update/delete wiki pages and assignments, list people, and create/read/update/delete assignment rubrics.
+A Swift package and CLI tool for the [Canvas LMS API](https://developerdocs.instructure.com/services/canvas), built so AI agents (and humans) can manage course content from the terminal: list courses, create/read/update/delete wiki pages and assignments, list people, list assignment submissions, and create/read/update/delete assignment rubrics.
 
 An easel is the thing that holds a canvas.
 
@@ -51,7 +51,7 @@ All commands print JSON to stdout by default. Choose the shape with `--format`:
 - `jsonl` — one full JSON object per line.
 - `smalljsonl` — one slim JSON object per line: just id/title plus a few key meta fields, for fetching ids and titles without the full-record bloat.
 - `md` — human-readable Markdown: an `## Title (id)` heading and a labeled field list per record, with page/assignment bodies and rubric, enrollment, and criteria tables.
-- `id` — just the ids, one per line (page url slugs for pages).
+- `id` — just the ids, one per line (page url slugs for pages, student user ids for submissions).
 
 JSON field names match the Canvas API docs. Logs go to `~/Library/Logs/easel/`, never to stdout.
 
@@ -122,6 +122,31 @@ Every date flag (`--due-at`, `--unlock-at`, `--lock-at`, `--publish-at`) takes a
 
 easel rejects values without a time zone before sending anything, because Canvas silently treats zone-less dates as UTC — which shifts the wall-clock time by hours. Canvas stores dates in UTC and returns them with a `Z` suffix, so a date you write with `-05:00` reads back as the equivalent `Z` time.
 
+### Submissions
+
+```bash
+easel submissions 101                                        # every published assignment, every status
+easel submissions 101 --assignment 501 --state not-submitted # who has not turned in 501
+easel submissions 101 --state needs-grading --format smalljsonl  # ungraded work; group by assignment_id
+easel submissions 101 --assignment 501 --assignment 502      # repeat --assignment for more
+easel submissions 101 --assignment 501 --state not-submitted --format id  # just their user ids
+```
+
+Each row is one active student's submission for one published assignment; students with concluded or inactive enrollments are left out. Canvas keeps a submission row for every student an assignment is assigned to, turned in or not. Unpublished assignments have no student submissions, and Canvas answers `--assignment` with an unpublished id with a 403 ("invalid assignment ids requested").
+
+`--state` filters by easel's own status, not Canvas's `workflow_state`, because no `workflow_state` answers "who hasn't turned it in": Canvas marks missing work `graded` once a teacher enters a 0 or the late policy grades it automatically, and it marks excused students `graded` too. Every submission has exactly one status, checked in this order:
+
+| `--state` | Meaning (Canvas fields) |
+| --- | --- |
+| `excused` | `excused` is true, whatever else is set. |
+| `not-submitted` | `submitted_at` is null — nothing turned in, even if the missing work has a grade. |
+| `needs-grading` | Canvas's own rule, the one behind its "needs grading" count: `submission_type` is set, and `workflow_state` is `pending_review`, or is `submitted`/`graded` with a null `score` or `"grade_matches_current_submission": false`. That covers a new submission, a resubmission after grading (old score, grade no longer matches), and a grade the teacher cleared. |
+| `graded` | Turned in and graded for the current attempt. |
+
+Every format shows each row's `status` (easel's field, not a Canvas one) next to Canvas's raw `workflow_state`, so an unfiltered list reads correctly too. Omit `--state` for every status. Canvas has no filter for these statuses, so easel always asks Canvas for every submission and filters them itself. On-paper and no-submission assignments have nothing turned in online, so every student who isn't excused is `not-submitted` there.
+
+`--format id` prints one student user id per row, so give it a single `--assignment`; across several assignments the ids repeat with no assignment to tell them apart — use `smalljsonl`, which includes `assignment_id`.
+
 ### People
 
 ```bash
@@ -145,7 +170,8 @@ can bypass redaction — so an agent running the CLI can't leak identities past 
 policy the env var sets.
 
 With it on, every format (`json`, `jsonl`, `smalljsonl`, `md`; `id` is a numeric
-id and is never a name) redacts the person fields on each user:
+id and is never a name) redacts the person fields on each user — the people
+from `users` and the student embedded in each `submissions` row:
 
 | Field | Redacted to |
 | --- | --- |
@@ -159,8 +185,8 @@ contributes only what it has (`Jo Smith` → `Jo S`), middle names are dropped
 (`Mary Jane Watson` → `Mar W`), and a lone name keeps just its first three
 letters (`Prince` → `Pri`). The numeric `id`, `sis_user_id`, `pronouns`, and
 enrollments carry no name and pass through unchanged, so an agent can still
-cross-reference a person by id. Only the `users` command emits personal data
-today, so it's the only output anonymous mode affects.
+cross-reference a person by id. Only the `users` and `submissions` commands emit
+personal data today, so they're the only output anonymous mode affects.
 
 ### Rubrics
 
@@ -223,7 +249,7 @@ swift build          # build
 swift test           # run all tests (offline; no API key needed)
 ```
 
-See `CLAUDE.md` for the architecture and how to add new endpoints.
+See `AGENTS.md` for the architecture and how to add new endpoints.
 
 ## References
 

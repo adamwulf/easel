@@ -213,6 +213,136 @@ enum Fixtures {
     }
     """
 
+    // MARK: - Submissions
+
+    static let submissionsList = """
+    [
+      {
+        "id": 7001,
+        "user_id": 9001,
+        "assignment_id": 501,
+        "workflow_state": "graded",
+        "submission_type": "online_upload",
+        "attempt": 1,
+        "submitted_at": "2026-09-04T22:15:00Z",
+        "graded_at": "2026-09-08T15:00:00Z",
+        "score": 92.0,
+        "grade": "92",
+        "grade_matches_current_submission": true,
+        "excused": false,
+        "late": false,
+        "missing": false,
+        "late_policy_status": null,
+        "seconds_late": 0,
+        "grader_id": 9002,
+        "preview_url": "https://example.instructure.com/courses/101/assignments/501/submissions/9001?preview=1",
+        "user": {
+          "id": 9001,
+          "name": "Alex Rivera",
+          "sortable_name": "Rivera, Alex",
+          "short_name": "Alex",
+          "sis_user_id": "S0001",
+          "login_id": "arivera",
+          "email": "arivera@example.edu"
+        }
+      },
+      {
+        "id": 7002,
+        "user_id": 9003,
+        "assignment_id": 501,
+        "workflow_state": "unsubmitted",
+        "submission_type": null,
+        "attempt": null,
+        "submitted_at": null,
+        "graded_at": null,
+        "score": null,
+        "grade": null,
+        "grade_matches_current_submission": true,
+        "excused": false,
+        "late": false,
+        "missing": true,
+        "late_policy_status": null,
+        "seconds_late": 0,
+        "grader_id": null,
+        "user": {
+          "id": 9003,
+          "name": "Jordan Lee",
+          "sortable_name": "Lee, Jordan",
+          "short_name": "Jordan",
+          "login_id": "jlee"
+        }
+      },
+      {
+        "id": 7003,
+        "user_id": 9004,
+        "assignment_id": 501,
+        "workflow_state": "graded",
+        "submission_type": null,
+        "submitted_at": null,
+        "graded_at": "2026-09-08T15:05:00Z",
+        "grade_matches_current_submission": true,
+        "score": null,
+        "grade": null,
+        "excused": true,
+        "late": false,
+        "missing": false,
+        "user": {
+          "id": 9004,
+          "name": "Priya Patel",
+          "sortable_name": "Patel, Priya",
+          "login_id": "ppatel"
+        }
+      },
+      {
+        "id": 7004,
+        "user_id": 9005,
+        "assignment_id": 501,
+        "workflow_state": "graded",
+        "submission_type": null,
+        "attempt": null,
+        "submitted_at": null,
+        "graded_at": "2026-09-08T15:10:00Z",
+        "score": 0.0,
+        "grade": "0",
+        "grade_matches_current_submission": true,
+        "excused": false,
+        "late": false,
+        "missing": true,
+        "late_policy_status": "missing",
+        "user": {
+          "id": 9005,
+          "name": "Morgan Diaz",
+          "sortable_name": "Diaz, Morgan",
+          "login_id": "mdiaz"
+        }
+      },
+      {
+        "id": 7005,
+        "user_id": 9006,
+        "assignment_id": 502,
+        "workflow_state": "submitted",
+        "submission_type": "online_text_entry",
+        "attempt": 2,
+        "submitted_at": "2026-09-10T18:30:00Z",
+        "graded_at": "2026-09-09T15:00:00Z",
+        "score": 40.0,
+        "grade": "40",
+        "grade_matches_current_submission": false,
+        "excused": false,
+        "late": true,
+        "missing": false,
+        "late_policy_status": "late",
+        "seconds_late": 86400,
+        "user": {
+          "id": 9006,
+          "name": "Casey Kim",
+          "sortable_name": "Kim, Casey",
+          "login_id": "ckim"
+        }
+      }
+    ]
+    """
+
     // MARK: - Users
 
     static let usersList = """

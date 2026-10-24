@@ -6,7 +6,7 @@ import XCTest
 /// or an API key.
 final class ParsingTests: XCTestCase {
     func testRootListsAllSubcommands() {
-        XCTAssertEqual(Easel.configuration.subcommands.count, 17)
+        XCTAssertEqual(Easel.configuration.subcommands.count, 18)
     }
 
     func testCoursesParses() throws {
@@ -189,6 +189,35 @@ final class ParsingTests: XCTestCase {
 
     func testUpdatePageRejectsDateWithoutTimeZone() {
         XCTAssertThrowsError(try UpdatePageCommand.parse(["101", "home", "--publish-at", "2026-08-24T08:00:00"]))
+    }
+
+    func testSubmissionsParsesAssignmentsAndState() throws {
+        let command = try SubmissionsCommand.parse(
+            ["101", "--assignment", "501", "--assignment", "502", "--state", "not-submitted"]
+        )
+        XCTAssertEqual(command.courseID, 101)
+        XCTAssertEqual(command.assignment, [501, 502])
+        XCTAssertEqual(command.state, .notSubmitted)
+    }
+
+    func testSubmissionsParsesEveryStatus() throws {
+        let values = ["not-submitted", "needs-grading", "graded", "excused"]
+        let parsed = try values.map { try SubmissionsCommand.parse(["101", "--state", $0]).state }
+        XCTAssertEqual(parsed, [.notSubmitted, .needsGrading, .graded, .excused])
+    }
+
+    func testSubmissionsDefaultsToAllAssignmentsAndStates() throws {
+        let command = try SubmissionsCommand.parse(["101"])
+        XCTAssertEqual(command.assignment, [])
+        XCTAssertNil(command.state)
+    }
+
+    func testSubmissionsRejectsUnknownState() {
+        // A typo must fail, not silently fall back to every state.
+        XCTAssertThrowsError(try SubmissionsCommand.parse(["101", "--state", "not-submited"]))
+        // Canvas's raw workflow states aren't easel statuses.
+        XCTAssertThrowsError(try SubmissionsCommand.parse(["101", "--state", "unsubmitted"]))
+        XCTAssertThrowsError(try SubmissionsCommand.parse(["101", "--state", "pending_review"]))
     }
 
     func testUsersParsesEnrollmentType() throws {
